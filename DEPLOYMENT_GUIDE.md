@@ -26,43 +26,39 @@ Your GitHub Student Developer Pack includes:
 
 ---
 
-## ⚡ Option A: Vercel (Frontend) + Render (Backend) + Neon (Postgres) [Recommended]
+## ⚡ Option A: Vercel (Frontend) + Render (Backend & DB) [100% Free & Turnkey]
 
-This architecture splits the frontend and backend into high-speed serverless and container tiers.
+Both Render and Vercel connect directly to your GitHub repository `https://github.com/SIHWinners/SIH2` and automatically redeploy whenever you push code!
 
-### Step 1: Create Free PostgreSQL Database on Neon or Supabase
-1. Go to [neon.tech](https://neon.tech) or [supabase.com](https://supabase.com) and sign up with your GitHub account.
-2. Create a new project named `oil-india-digital-twin`.
-3. Copy your connection string (format: `postgresql://user:password@ep-xyz.region.neon.tech/neondb?sslmode=require`).
-4. (Optional) Run the SQL schema from `scripts/init_postgres.sql` in the Neon SQL Editor.
+### Step 1: Deploy Backend & Database on Render (1-Click via Blueprint)
+1. Go to **[dashboard.render.com](https://dashboard.render.com)** and log in with your GitHub account.
+2. Click the **"New +"** button $\rightarrow$ Select **"Blueprint"**.
+3. Select your repository: **`SIHWinners/SIH2`**.
+4. Render will automatically detect the **[`render.yaml`](file:///c:/Users/SNEH/Desktop/SIH2/render.yaml)** file we created! It will automatically:
+   - Provision a free managed **PostgreSQL database** (`oil-india-postgres`).
+   - Wire the `DATABASE_URL` connection string automatically.
+   - Install all Python dependencies from `requirements.txt`.
+   - Start the FastAPI backend server (`oil-india-digital-twin-api`).
+5. Click **"Apply"**.
+6. Once deployed (typically 2-3 minutes), Render will display your live public API URL:
+   - Example: `https://oil-india-digital-twin-api.onrender.com`
+   - Test it by opening: `https://oil-india-digital-twin-api.onrender.com/api/v1/health`
 
-### Step 2: Deploy FastAPI Backend on Render
-1. Go to [render.com](https://render.com) and log in with GitHub.
-2. Click **New +** $\rightarrow$ **Web Service**.
-3. Connect your repository: `https://github.com/SIHWinners/SIH2`.
-4. Configure settings:
-   - **Name:** `oil-india-twin-api`
-   - **Runtime:** `Python` (or `Docker` to use the provided `Dockerfile`)
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn app.api.main:app --host 0.0.0.0 --port $PORT`
-5. Under **Environment Variables**, add:
-   - `DATABASE_URL`: *(Your Neon PostgreSQL connection string)*
-   - `APP_NAME`: `Oil India Digital Twin for Well-to-Surface Optimization`
-   - `FIELD_NAME`: `Oil India Limited - Baghewala Asset`
-6. Click **Deploy Web Service**. Once live, note your API URL (e.g., `https://oil-india-twin-api.onrender.com`).
-
-### Step 3: Deploy React Frontend on Vercel
-1. Go to [vercel.com](https://vercel.com) and log in with your GitHub account.
-2. Click **Add New...** $\rightarrow$ **Project**.
-3. Import your repository `SIHWinners/SIH2`.
-4. Configure project settings:
+### Step 2: Deploy React Frontend on Vercel
+1. Go to **[vercel.com](https://vercel.com)** and log in with your GitHub account.
+2. Click **"Add New..."** $\rightarrow$ **"Project"**.
+3. Import your repository: **`SIHWinners/SIH2`**.
+4. Configure the project:
    - **Framework Preset:** `Vite`
-   - **Root Directory:** Click edit and select `web`
+   - **Root Directory:** Click "Edit" and select **`web`**
    - **Build Command:** `npm run build`
    - **Output Directory:** `dist`
-5. Under **Environment Variables**, add:
-   - `VITE_API_BASE_URL`: `https://oil-india-twin-api.onrender.com`
-6. Click **Deploy**. Within 60 seconds, your site will be live at `https://sih2-yourname.vercel.app`!
+5. Expand **"Environment Variables"** and add:
+   - **Key:** `VITE_API_URL`
+   - **Value:** `https://oil-india-digital-twin-api.onrender.com` *(your Render API URL from Step 1)*
+6. Click **"Deploy"**.
+7. In ~45 seconds, your live React Digital Twin will be live at:
+   - **`https://sih2-yourname.vercel.app`**
 
 ---
 
