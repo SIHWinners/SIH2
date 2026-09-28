@@ -277,7 +277,7 @@ export default function App() {
                 OIL INDIA LIMITED
               </h1>
               <span className="badge badge-gold" style={{ fontSize: '10px', letterSpacing: '0.5px' }}>
-                SIH26120 PRODUCTION TWIN
+                SIH26120 • TEAM BRAIN.EXE_CRASHED
               </span>
             </div>
             <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>

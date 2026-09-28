@@ -17,7 +17,7 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: `Welcome to the **Oil India Digital Twin Operations Intelligence Console**.\n\nGrounded in continuous SCADA telemetry, thermodynamic reservoir modeling, and machine learning inferences across the Baghewala Asset.\n\nSelect an operational inquiry to initiate analysis:`,
+      text: `Welcome to the **Oil India Digital Twin Operations Intelligence Console** (Engineered by Team **brain.exe_crashed** for SIH26120).\n\nGrounded in continuous SCADA telemetry, thermodynamic reservoir modeling, and machine learning inferences across the Baghewala Asset.\n\nSelect an operational inquiry to initiate analysis:`,
       suggestedActions: [
         'Field Operations Summary',
         'Diagnose Critical Unit SRP-004',

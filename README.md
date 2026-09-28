@@ -281,7 +281,7 @@ The system is deployed using a decoupled, production-grade cloud architecture:
 
 ## 👥 Smart India Hackathon Team
 
-- **Team Name:** SIH Winners
+- **Team Name:** `brain.exe_crashed`
 - **Problem Statement ID:** SIH26120
 - **Organization:** Oil India Limited (Ministry of Petroleum and Natural Gas)
 - **Repository:** [https://github.com/SIHWinners/SIH2](https://github.com/SIHWinners/SIH2)
