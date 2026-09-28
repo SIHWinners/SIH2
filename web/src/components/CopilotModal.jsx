@@ -6,7 +6,15 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: `Hello! I am the **Oil India Digital Twin Operations Copilot**. I analyze live telemetry, SCADA streams, and ML models across our Baghewala SRP and CSS wells. How can I assist you with ${selectedWell || 'the field'} today?`,
+      text: `Hello! I am the **Oil India Digital Twin Operations Copilot**.\n\nI monitor real-time SCADA telemetry, thermodynamic reservoir physics, and machine learning models across our Baghewala SRP and CSS wells.\n\nSelect any operational topic below to begin:`,
+      suggestedActions: [
+        '📊 Field Operations Summary',
+        '⚠️ Why is SRP-004 in critical state?',
+        '📈 Explain Dynamometer Card',
+        '🔥 What is CSS Thermal Recovery?',
+        '🤖 How does AI calculate optimal SPM?',
+        '☀️ Live Thar Desert Weather',
+      ],
       time: 'Just now',
     },
   ]);
@@ -162,6 +170,43 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
                 }}
               >
                 {msg.text}
+                {msg.suggestedActions && msg.suggestedActions.length > 0 && (
+                  <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Sparkles size={12} color="#f59e0b" /> Select an analysis option:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {msg.suggestedActions.map((action, actIdx) => (
+                        <button
+                          key={actIdx}
+                          onClick={() => handleSend(action)}
+                          style={{
+                            background: 'rgba(245, 158, 11, 0.1)',
+                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                            color: '#fbbf24',
+                            fontSize: '11px',
+                            fontWeight: '600',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.25)';
+                            e.currentTarget.style.borderColor = '#f59e0b';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
+                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                          }}
+                        >
+                          {action}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <span style={{ fontSize: '10px', color: '#64748b', marginTop: '3px', display: 'block', textAlign: msg.role === 'user' ? 'right' : 'left' }}>
                 {msg.time}
