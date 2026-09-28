@@ -21,6 +21,7 @@ import CssSchematic from './components/CssSchematic';
 import DynoCardCanvas from './components/DynoCardCanvas';
 import ShapWaterfall from './components/ShapWaterfall';
 import CopilotModal from './components/CopilotModal';
+import { apiUrl } from './api';
 
 export default function App() {
   const [wells, setWells] = useState([]);
@@ -65,10 +66,10 @@ export default function App() {
     setIsRefreshing(true);
     try {
       const [wellsRes, dashRes, alertsRes, weatherRes] = await Promise.all([
-        fetch('/api/v1/wells').then(r => r.json()),
-        fetch('/api/v1/dashboard').then(r => r.json()),
-        fetch('/api/v1/alerts').then(r => r.json()),
-        fetch('/api/v1/weather').then(r => r.json()).catch(() => null),
+        fetch(apiUrl('/api/v1/wells')).then(r => r.json()),
+        fetch(apiUrl('/api/v1/dashboard')).then(r => r.json()),
+        fetch(apiUrl('/api/v1/alerts')).then(r => r.json()),
+        fetch(apiUrl('/api/v1/weather')).then(r => r.json()).catch(() => null),
       ]);
       setWells(wellsRes || []);
       setDashboardData(dashRes || []);
@@ -84,10 +85,10 @@ export default function App() {
   const fetchWellDetails = async (wellId) => {
     try {
       const [telRes, dynoRes, expRes, cssRes] = await Promise.all([
-        fetch(`/api/v1/telemetry/${wellId}?minutes=360`).then(r => r.json()),
-        fetch(`/api/v1/dyno-card/${wellId}`).then(r => r.json()).catch(() => null),
-        fetch(`/api/v1/explain/${wellId}`).then(r => r.json()).catch(() => null),
-        wellId.startsWith('CSS') ? fetch(`/api/v1/css-status/${wellId}`).then(r => r.json()).catch(() => null) : null,
+        fetch(apiUrl(`/api/v1/telemetry/${wellId}?minutes=360`)).then(r => r.json()),
+        fetch(apiUrl(`/api/v1/dyno-card/${wellId}`)).then(r => r.json()).catch(() => null),
+        fetch(apiUrl(`/api/v1/explain/${wellId}`)).then(r => r.json()).catch(() => null),
+        wellId.startsWith('CSS') ? fetch(apiUrl(`/api/v1/css-status/${wellId}`)).then(r => r.json()).catch(() => null) : null,
       ]);
       setTelemetry(telRes || []);
       setDynoCard(dynoRes);
@@ -111,7 +112,7 @@ export default function App() {
 
   const runSimulation = async (wellId, casing, tubing, load, speed, temp) => {
     try {
-      const resp = await fetch('/api/v1/predict/simulate', {
+      const resp = await fetch(apiUrl('/api/v1/predict/simulate'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -132,7 +133,7 @@ export default function App() {
 
   const handleSimulateTick = async () => {
     try {
-      await fetch('/api/v1/simulator/step', { method: 'POST' });
+      await fetch(apiUrl('/api/v1/simulator/step'), { method: 'POST' });
       fetchInitialData();
       if (selectedWell) fetchWellDetails(selectedWell);
     } catch (e) {
@@ -142,8 +143,8 @@ export default function App() {
 
   const handleAcknowledgeAlert = async (id) => {
     try {
-      await fetch(`/api/v1/alerts/${id}/acknowledge`, { method: 'POST' });
-      const updated = await fetch('/api/v1/alerts').then(r => r.json());
+      await fetch(apiUrl(`/api/v1/alerts/${id}/acknowledge`), { method: 'POST' });
+      const updated = await fetch(apiUrl('/api/v1/alerts')).then(r => r.json());
       setAlerts(updated);
     } catch (e) {
       console.error('Ack error:', e);
@@ -152,7 +153,7 @@ export default function App() {
 
   const handleExportReport = async () => {
     try {
-      const resp = await fetch(`/api/v1/report/${selectedWell}`);
+      const resp = await fetch(apiUrl(`/api/v1/report/${selectedWell}`));
       const data = await resp.json();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);

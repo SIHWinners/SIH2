@@ -1,0 +1,25 @@
+services:
+  # FastAPI SCADA Telemetry & Machine Learning Backend
+  - type: web
+    name: oil-india-digital-twin-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: APP_NAME
+        value: Oil India Digital Twin for Well-to-Surface Optimization
+      - key: FIELD_NAME
+        value: Oil India Limited - Baghewala Asset
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oil-india-postgres
+          property: connectionString
+
+databases:
+  # Managed PostgreSQL Database for Time-Series Telemetry
+  - name: oil-india-postgres
+    databaseName: digital_twin
+    user: oil_user
+    plan: free

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, X, Sparkles, User } from 'lucide-react';
+import { apiUrl } from '../api';
 
 export default function CopilotModal({ isOpen, onClose, selectedWell }) {
   const [messages, setMessages] = useState([
@@ -37,7 +38,7 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
     setLoading(true);
 
     try {
-      const resp = await fetch('/api/v1/copilot/chat', {
+      const resp = await fetch(apiUrl('/api/v1/copilot/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: query }),
