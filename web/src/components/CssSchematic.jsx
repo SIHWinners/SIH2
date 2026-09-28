@@ -1,4 +1,5 @@
 import React from 'react';
+import { Flame } from 'lucide-react';
 
 export default function CssSchematic({
   phase = "PRODUCTION",
@@ -10,29 +11,38 @@ export default function CssSchematic({
   phaseDay = 8,
   totalDays = 45,
 }) {
-  const isInjection = phase === "INJECTION";
-  const isSoaking = phase === "SOAKING";
-  const isProduction = phase === "PRODUCTION";
+  const safePhase = String(phase || "PRODUCTION").toUpperCase();
+  const safeTemp = Number(steamTemp) || 280.0;
+  const safePressure = Number(steamPressure) || 1320.0;
+  const safeQuality = Number(steamQuality) || 78.5;
+  const safeViscosity = Number(viscosityCp) || 115.0;
+  const safeCycle = Number(cycleNumber) || 1;
+  const safeDay = Number(phaseDay) || 1;
+  const safeTotalDays = Number(totalDays) || 45;
+
+  const isInjection = safePhase === "INJECTION";
+  const isSoaking = safePhase === "SOAKING";
+  const isProduction = safePhase === "PRODUCTION";
 
   const phaseColor = isInjection ? "#ef4444" : isSoaking ? "#f59e0b" : "#10b981";
 
   return (
     <div className="glass-panel" style={{ padding: '20px', position: 'relative' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
           <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>♨️</span> Cyclic Steam Stimulation (CSS) Thermal Reservoir Model
+            <Flame size={16} color="#f59e0b" /> Cyclic Steam Stimulation (CSS) Thermal Reservoir Model
           </h4>
           <p style={{ fontSize: '12px', color: '#94a3b8' }}>
             Downhole steam heat diffusion and ASTM D341 heavy oil viscosity collapse model
           </p>
         </div>
         <span className="badge" style={{ background: `${phaseColor}25`, color: phaseColor, border: `1px solid ${phaseColor}60` }}>
-          ● {phase} PHASE (DAY {phaseDay}/{totalDays})
+          ● {safePhase} PHASE (DAY {safeDay}/{safeTotalDays})
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: '20px', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'center' }}>
         {/* Animated Wellbore & Reservoir Sand SVG */}
         <div style={{ background: 'rgba(7, 11, 19, 0.7)', borderRadius: '10px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
           <svg viewBox="0 0 500 300" style={{ width: '100%', height: 'auto', maxHeight: '270px' }}>
@@ -106,17 +116,17 @@ export default function CssSchematic({
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Downhole Thermal Front</div>
             <div style={{ fontSize: '20px', fontWeight: '700', color: '#ef4444', fontFamily: 'JetBrains Mono' }}>
-              {steamTemp.toFixed(1)} <span style={{ fontSize: '13px' }}>°C</span>
+              {safeTemp.toFixed(1)} <span style={{ fontSize: '13px' }}>°C</span>
             </div>
             <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              Pressure: {steamPressure.toFixed(0)} psi • Quality: {steamQuality.toFixed(1)}%
+              Pressure: {safePressure.toFixed(0)} psi • Quality: {safeQuality.toFixed(1)}%
             </div>
           </div>
 
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Heavy Oil Viscosity (In Situ)</div>
             <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b', fontFamily: 'JetBrains Mono' }}>
-              {viscosityCp.toFixed(0)} <span style={{ fontSize: '13px' }}>cP</span>
+              {safeViscosity.toFixed(0)} <span style={{ fontSize: '13px' }}>cP</span>
             </div>
             <div style={{ fontSize: '11px', color: '#34d399' }}>
               ▼ Reduced from 15,000 cP baseline (99.2% mobility gain)
@@ -126,7 +136,7 @@ export default function CssSchematic({
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Cycle History</div>
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#38bdf8', fontFamily: 'JetBrains Mono' }}>
-              Cycle #{cycleNumber} • {totalDays - phaseDay} Days Remain
+              Cycle #{safeCycle} • {Math.max(0, safeTotalDays - safeDay)} Days Remain
             </div>
             <div style={{ fontSize: '11px', color: '#94a3b8' }}>
               Optimal workover window predicted

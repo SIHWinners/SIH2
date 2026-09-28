@@ -6,16 +6,24 @@ export default function ShapWaterfall({ explainData }) {
     return null;
   }
 
-  const { top_drivers = [], natural_language_summary, anomaly_score = 0, predicted_anomaly = false, base_value = 0 } = explainData;
-  const validDrivers = top_drivers.filter(d => d && typeof d.shap_value === 'number');
+  const {
+    top_drivers = [],
+    natural_language_summary = "All monitored sensor dynamics conform to baseline mechanical envelope.",
+    anomaly_score = 0,
+    predicted_anomaly = false,
+    base_value = 0,
+  } = explainData;
+
+  const validDrivers = top_drivers.filter(d => d && typeof d.shap_value === 'number' && !isNaN(d.shap_value));
   if (validDrivers.length === 0) return null;
 
   const safeScore = Number(anomaly_score) || 0;
+  const safeBase = Number(base_value) || 0;
   const maxAbs = Math.max(...validDrivers.map(d => Math.abs(d.shap_value)), 0.2);
 
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
         <div>
           <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Cpu size={16} color="#38bdf8" /> Explainable AI (SHAP TreeExplainer Attribution)
@@ -32,18 +40,19 @@ export default function ShapWaterfall({ explainData }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '20px', alignItems: 'center' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', alignItems: 'center' }}>
         {/* Horizontal SHAP Impact Bars */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {top_drivers.slice(0, 6).map((driver, idx) => {
-            const isPositive = driver.shap_value >= 0;
-            const barWidth = Math.min(100, (Math.abs(driver.shap_value) / maxAbs) * 100);
+          {validDrivers.slice(0, 6).map((driver, idx) => {
+            const val = Number(driver.shap_value) || 0;
+            const isPositive = val >= 0;
+            const barWidth = Math.min(100, (Math.abs(val) / maxAbs) * 100);
             const color = isPositive ? '#f43f5e' : '#10b981';
 
             return (
               <div key={idx} style={{ display: 'grid', gridTemplateColumns: '160px 1fr 60px', alignItems: 'center', gap: '10px', fontSize: '12px' }}>
-                <span style={{ color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={driver.label}>
-                  {driver.label}
+                <span style={{ color: '#cbd5e1', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={driver.label || 'Feature'}>
+                  {driver.label || 'Telemetry Driver'}
                 </span>
 
                 {/* Centered zero-line bar */}
@@ -63,7 +72,7 @@ export default function ShapWaterfall({ explainData }) {
                 </div>
 
                 <span style={{ color, fontFamily: 'JetBrains Mono', fontWeight: '600', fontSize: '11px', textAlign: 'right' }}>
-                  {driver.shap_value > 0 ? `+${driver.shap_value.toFixed(3)}` : driver.shap_value.toFixed(3)}
+                  {val > 0 ? `+${val.toFixed(3)}` : val.toFixed(3)}
                 </span>
               </div>
             );
@@ -78,9 +87,9 @@ export default function ShapWaterfall({ explainData }) {
           <div style={{ fontSize: '13px', color: '#f1f5f9', marginTop: '8px', lineHeight: '1.5' }}>
             {natural_language_summary}
           </div>
-          <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 12px 0;" />
+          <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.08)', margin: '12px 0' }} />
           <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-            <b>Baseline Envelope:</b> {base_value.toFixed(3)} | <b>Explainability Protocol:</b> SHAP TreeExplainer v0.52
+            <b>Baseline Envelope:</b> {safeBase.toFixed(3)} | <b>Explainability Protocol:</b> SHAP TreeExplainer v0.52
           </div>
         </div>
       </div>
