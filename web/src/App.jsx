@@ -51,6 +51,7 @@ export default function App() {
   // Copilot Drawer
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   // Initial Load
   useEffect(() => {
@@ -68,10 +69,10 @@ export default function App() {
     setIsRefreshing(true);
     try {
       const [wellsRes, dashRes, alertsRes, weatherRes] = await Promise.all([
-        fetch(apiUrl('/api/v1/wells')).then(r => r.json()),
-        fetch(apiUrl('/api/v1/dashboard')).then(r => r.json()),
-        fetch(apiUrl('/api/v1/alerts')).then(r => r.json()),
-        fetch(apiUrl('/api/v1/weather')).then(r => r.json()).catch(() => null),
+        fetch(apiUrl('/api/v1/wells')).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(apiUrl('/api/v1/dashboard')).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(apiUrl('/api/v1/alerts')).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(apiUrl('/api/v1/weather')).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       setWells(wellsRes || []);
       setDashboardData(dashRes || []);
@@ -85,30 +86,55 @@ export default function App() {
   };
 
   const fetchWellDetails = async (wellId) => {
+    setLoadingDetails(true);
     try {
-      const [telRes, dynoRes, expRes, cssRes] = await Promise.all([
-        fetch(apiUrl(`/api/v1/telemetry/${wellId}?minutes=360`)).then(r => r.json()),
-        fetch(apiUrl(`/api/v1/dyno-card/${wellId}`)).then(r => r.json()).catch(() => null),
-        fetch(apiUrl(`/api/v1/explain/${wellId}`)).then(r => r.json()).catch(() => null),
-        wellId.startsWith('CSS') ? fetch(apiUrl(`/api/v1/css-status/${wellId}`)).then(r => r.json()).catch(() => null) : null,
-      ]);
-      setTelemetry(telRes || []);
-      setDynoCard(dynoRes);
-      setExplainData(expRes);
-      setCssData(cssRes);
+      // 1. Fetch telemetry independently
+      const telPromise = fetch(apiUrl(`/api/v1/telemetry/${wellId}?minutes=360`))
+        .then(r => r.ok ? r.json() : [])
+        .then(telRes => {
+          if (Array.isArray(telRes)) {
+            setTelemetry(telRes);
+            if (telRes.length > 0) {
+              const last = telRes[telRes.length - 1];
+              setSandboxCasing(last.casing_pressure || 205);
+              setSandboxTubing(last.tubing_pressure || 140);
+              setSandboxLoad(last.polished_rod_load || 225);
+              setSandboxSpeed(last.stroke_speed || 10.5);
+              setSandboxTemp(last.motor_temp || 65);
+              runSimulation(wellId, last.casing_pressure, last.tubing_pressure, last.polished_rod_load, last.stroke_speed, last.motor_temp);
+            }
+          }
+        })
+        .catch(err => {
+          console.warn('Telemetry fetch error:', err);
+          setTelemetry([]);
+        });
 
-      // Pre-fill sandbox with current well state
-      if (telRes && telRes.length > 0) {
-        const last = telRes[telRes.length - 1];
-        setSandboxCasing(last.casing_pressure);
-        setSandboxTubing(last.tubing_pressure);
-        setSandboxLoad(last.polished_rod_load);
-        setSandboxSpeed(last.stroke_speed);
-        setSandboxTemp(last.motor_temp);
-        runSimulation(wellId, last.casing_pressure, last.tubing_pressure, last.polished_rod_load, last.stroke_speed, last.motor_temp);
-      }
+      // 2. Fetch dyno card independently
+      const dynoPromise = fetch(apiUrl(`/api/v1/dyno-card/${wellId}`))
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setDynoCard(data))
+        .catch(() => setDynoCard(null));
+
+      // 3. Fetch SHAP explainability independently
+      const expPromise = fetch(apiUrl(`/api/v1/explain/${wellId}`))
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setExplainData(data))
+        .catch(() => setExplainData(null));
+
+      // 4. Fetch CSS status if applicable
+      const cssPromise = wellId.startsWith('CSS')
+        ? fetch(apiUrl(`/api/v1/css-status/${wellId}`))
+            .then(r => r.ok ? r.json() : null)
+            .then(data => setCssData(data))
+            .catch(() => setCssData(null))
+        : Promise.resolve(setCssData(null));
+
+      await Promise.allSettled([telPromise, dynoPromise, expPromise, cssPromise]);
     } catch (e) {
       console.error('Error fetching well details:', e);
+    } finally {
+      setLoadingDetails(false);
     }
   };
 
@@ -501,16 +527,51 @@ export default function App() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Animated Physical Schematic */}
             <SrpSchematic
-              spm={currentWellLatest.stroke_speed || 10.0}
-              rodLoad={currentWellLatest.polished_rod_load || 225}
-              casingPressure={currentWellLatest.casing_pressure || 205}
-              tubingPressure={currentWellLatest.tubing_pressure || 142}
-              motorTemp={currentWellLatest.motor_temp || 65}
-              dynoType={currentWellLatest.dyno_card_type || "Normal"}
+              spm={currentWellLatest?.stroke_speed || 10.0}
+              rodLoad={currentWellLatest?.polished_rod_load || 225}
+              casingPressure={currentWellLatest?.casing_pressure || 205}
+              tubingPressure={currentWellLatest?.tubing_pressure || 142}
+              motorTemp={currentWellLatest?.motor_temp || 65}
+              dynoType={currentWellLatest?.dyno_card_type || "Normal"}
             />
+
+            {/* SCADA Loading State Banner */}
+            {loadingDetails && (
+              <div className="glass-panel" style={{
+                padding: '24px',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '10px',
+                border: '1px solid rgba(245, 158, 11, 0.4)',
+                background: 'linear-gradient(135deg, rgba(14, 22, 38, 0.95) 0%, rgba(26, 36, 61, 0.85) 100%)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <RefreshCw size={20} className="spin" style={{ color: '#f59e0b' }} />
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: '#f8fafc', letterSpacing: '0.4px', textTransform: 'uppercase' }}>
+                    Acquiring SCADA Telemetry & Synthesizing Dynamometer Vectors for {selectedWell}...
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+                  Computing surface load cell data, Gibbs wave equation downhole pump loops, and SHAP attribution models...
+                </p>
+              </div>
+            )}
 
             {/* Interactive Dynamometer Card */}
             {dynoCard && <DynoCardCanvas cardData={dynoCard} />}
+
+            {/* Fallback if not loading and no dyno card */}
+            {!loadingDetails && !dynoCard && (
+              <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
+                <Activity size={24} style={{ color: '#a855f7', opacity: 0.7, margin: '0 auto 8px auto' }} />
+                <div style={{ fontSize: '14px', fontWeight: '600', color: '#f8fafc' }}>Dynamometer Telemetry Ready</div>
+                <p style={{ fontSize: '12px', marginTop: '4px' }}>
+                  Click <b>"Live SCADA Tick"</b> at the top to stream fresh surface/pump stroke cycles for {selectedWell}.
+                </p>
+              </div>
+            )}
 
             {/* SHAP Explainable AI Waterfall */}
             {explainData && <ShapWaterfall explainData={explainData} />}
@@ -530,6 +591,25 @@ export default function App() {
               phaseDay={cssData?.phase_day || 8}
               totalDays={cssData?.total_phase_days || 45}
             />
+
+            {/* CSS Loading State */}
+            {loadingDetails && (
+              <div className="glass-panel" style={{
+                padding: '20px',
+                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '10px',
+                border: '1px solid rgba(56, 189, 248, 0.3)',
+                background: 'linear-gradient(135deg, rgba(14, 22, 38, 0.95) 0%, rgba(14, 35, 60, 0.85) 100%)',
+              }}>
+                <RefreshCw size={18} className="spin" style={{ color: '#38bdf8' }} />
+                <span style={{ fontSize: '13px', fontWeight: '600', color: '#e2e8f0' }}>
+                  Synchronizing Thermodynamic Steam Inflow & ASTM D341 Viscosity Vectors for {selectedWell}...
+                </span>
+              </div>
+            )}
 
             {/* CSS Thermal Performance Metrics */}
             {cssData && (

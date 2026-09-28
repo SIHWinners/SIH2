@@ -1,4 +1,5 @@
 import React from 'react';
+import { Gauge, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export default function SrpSchematic({ 
   spm = 10.5, 
@@ -8,23 +9,30 @@ export default function SrpSchematic({
   motorTemp = 65, 
   dynoType = "Normal" 
 }) {
+  const safeSpm = Number(spm) || 10.0;
+  const safeRodLoad = Number(rodLoad) || 225.0;
+  const safeCasingPressure = Number(casingPressure) || 205.0;
+  const safeTubingPressure = Number(tubingPressure) || 142.0;
+  const safeMotorTemp = Number(motorTemp) || 65.0;
+  const safeDynoType = String(dynoType || "Normal");
+
   // Animation duration derived from Strokes Per Minute (SPM)
   // At 10 SPM -> 60/10 = 6 seconds per stroke cycle
-  const strokeDuration = Math.max(1.8, Math.min(12, 60 / (spm || 10)));
+  const strokeDuration = Math.max(1.8, Math.min(12, 60 / safeSpm));
 
   return (
     <div className="glass-panel" style={{ padding: '20px', position: 'relative', overflow: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
           <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🏗️</span> Sucker Rod Pump (SRP) Dynamic Physics Twin
+            <Gauge size={16} color="#f59e0b" /> Sucker Rod Pump (SRP) Dynamic Physics Twin
           </h4>
           <p style={{ fontSize: '12px', color: '#94a3b8' }}>
-            Reciprocating kinematic mechanical model synced with live SCADA motor speed ({spm.toFixed(1)} SPM)
+            Reciprocating kinematic mechanical model synced with live SCADA motor speed ({safeSpm.toFixed(1)} SPM)
           </p>
         </div>
-        <span className={`badge ${dynoType === 'Normal' ? 'badge-emerald' : 'badge-rose'}`}>
-          ● {dynoType.toUpperCase()}
+        <span className={`badge ${safeDynoType === 'Normal' ? 'badge-emerald' : 'badge-rose'}`}>
+          ● {safeDynoType.toUpperCase()}
         </span>
       </div>
 
@@ -98,30 +106,30 @@ export default function SrpSchematic({
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Polished Rod Load (PRL)</div>
             <div style={{ fontSize: '20px', fontWeight: '700', color: '#f59e0b', fontFamily: 'JetBrains Mono' }}>
-              {rodLoad.toFixed(1)} <span style={{ fontSize: '13px' }}>kN</span>
+              {safeRodLoad.toFixed(1)} <span style={{ fontSize: '13px' }}>kN</span>
             </div>
-            <div style={{ fontSize: '11px', color: rodLoad > 300 ? '#f43f5e' : '#10b981' }}>
-              {rodLoad > 300 ? '▲ High rod fatigue stress' : '● Within rod tensile limits'}
+            <div style={{ fontSize: '11px', color: safeRodLoad > 300 ? '#f43f5e' : '#10b981' }}>
+              {safeRodLoad > 300 ? '▲ High rod fatigue stress' : '● Within rod tensile limits'}
             </div>
           </div>
 
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Casing / Tubing Head Pressure</div>
             <div style={{ fontSize: '16px', fontWeight: '700', color: '#38bdf8', fontFamily: 'JetBrains Mono' }}>
-              {casingPressure.toFixed(0)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>psi</span> / {tubingPressure.toFixed(0)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>psi</span>
+              {safeCasingPressure.toFixed(0)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>psi</span> / {safeTubingPressure.toFixed(0)} <span style={{ fontSize: '12px', color: '#94a3b8' }}>psi</span>
             </div>
             <div style={{ fontSize: '11px', color: '#94a3b8' }}>
-              ΔP: {(casingPressure - tubingPressure).toFixed(0)} psi Inflow Drive
+              ΔP: {(safeCasingPressure - safeTubingPressure).toFixed(0)} psi Inflow Drive
             </div>
           </div>
 
           <div style={{ background: 'rgba(15, 23, 42, 0.8)', padding: '12px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
             <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Drive Motor Temperature</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: motorTemp > 80 ? '#f43f5e' : '#34d399', fontFamily: 'JetBrains Mono' }}>
-              {motorTemp.toFixed(1)} <span style={{ fontSize: '13px' }}>°C</span>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: safeMotorTemp > 80 ? '#f43f5e' : '#34d399', fontFamily: 'JetBrains Mono' }}>
+              {safeMotorTemp.toFixed(1)} <span style={{ fontSize: '13px' }}>°C</span>
             </div>
-            <div style={{ fontSize: '11px', color: motorTemp > 80 ? '#f43f5e' : '#94a3b8' }}>
-              {motorTemp > 80 ? '🚨 Thermal Derating Imminent' : '● Thermal Dissipation Steady'}
+            <div style={{ fontSize: '11px', color: safeMotorTemp > 80 ? '#f43f5e' : '#94a3b8' }}>
+              {safeMotorTemp > 80 ? '[CRITICAL] Thermal Derating Imminent' : '● Thermal Dissipation Steady'}
             </div>
           </div>
         </div>

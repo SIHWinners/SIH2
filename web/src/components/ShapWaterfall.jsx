@@ -1,19 +1,24 @@
 import React from 'react';
+import { Cpu } from 'lucide-react';
 
 export default function ShapWaterfall({ explainData }) {
-  if (!explainData || !explainData.top_drivers) {
+  if (!explainData || !Array.isArray(explainData.top_drivers) || explainData.top_drivers.length === 0) {
     return null;
   }
 
-  const { top_drivers, natural_language_summary, anomaly_score, predicted_anomaly, base_value } = explainData;
-  const maxAbs = Math.max(...top_drivers.map(d => Math.abs(d.shap_value)), 0.2);
+  const { top_drivers = [], natural_language_summary, anomaly_score = 0, predicted_anomaly = false, base_value = 0 } = explainData;
+  const validDrivers = top_drivers.filter(d => d && typeof d.shap_value === 'number');
+  if (validDrivers.length === 0) return null;
+
+  const safeScore = Number(anomaly_score) || 0;
+  const maxAbs = Math.max(...validDrivers.map(d => Math.abs(d.shap_value)), 0.2);
 
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
           <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>🧠</span> Explainable AI (SHAP TreeExplainer Attribution)
+            <Cpu size={16} color="#38bdf8" /> Explainable AI (SHAP TreeExplainer Attribution)
           </h4>
           <p style={{ fontSize: '12px', color: '#94a3b8' }}>
             Local Shapley additive values isolating the exact physical drivers of the anomaly alert
@@ -22,7 +27,7 @@ export default function ShapWaterfall({ explainData }) {
         <div style={{ textAlign: 'right' }}>
           <span style={{ fontSize: '12px', color: '#94a3b8' }}>Model Risk Score: </span>
           <b style={{ color: predicted_anomaly ? '#f43f5e' : '#10b981', fontFamily: 'JetBrains Mono', fontSize: '14px' }}>
-            {(anomaly_score * 100).toFixed(1)}%
+            {(safeScore * 100).toFixed(1)}%
           </b>
         </div>
       </div>

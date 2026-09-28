@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { Activity } from 'lucide-react';
 
 export default function DynoCardCanvas({ cardData }) {
   const [hoverPoint, setHoverPoint] = useState(null);
 
-  if (!cardData || !cardData.points || cardData.points.length === 0) {
+  if (!cardData || !Array.isArray(cardData.points) || cardData.points.length === 0) {
     return (
       <div className="glass-panel" style={{ padding: '24px', textAlign: 'center', color: '#94a3b8' }}>
         No dynamometer card telemetry available for this wellhead.
@@ -12,27 +13,33 @@ export default function DynoCardCanvas({ cardData }) {
   }
 
   const {
-    points,
-    card_type,
-    pprl_lbs,
-    mprl_lbs,
-    stroke_length_in,
-    indicated_pump_hp,
-    pump_fillage_pct,
-    diagnostic_message,
+    points = [],
+    card_type = "Normal",
+    pprl_lbs = 35000,
+    mprl_lbs = 25000,
+    stroke_length_in = 120,
+    indicated_pump_hp = 0,
+    pump_fillage_pct = 90,
+    diagnostic_message = "Normal operation envelope.",
   } = cardData;
+
+  const safePprl = Number(pprl_lbs) || 35000;
+  const safeMprl = Number(mprl_lbs) || 25000;
+  const safeStrokeLength = Number(stroke_length_in) || 120;
+  const safeCardType = String(card_type || "Normal");
 
   const width = 540;
   const height = 300;
   const padding = 50;
 
   // Compute scales
-  const maxPos = stroke_length_in || 120;
-  const maxLoad = Math.max(pprl_lbs * 1.12, 35000);
-  const minLoad = Math.max(0, mprl_lbs * 0.85);
+  const maxPos = safeStrokeLength;
+  const maxLoad = Math.max(safePprl * 1.12, 35000);
+  const minLoad = Math.max(0, safeMprl * 0.85);
+  const rangeY = Math.max(maxLoad - minLoad, 1000);
 
-  const scaleX = (pos) => padding + (pos / maxPos) * (width - 2 * padding);
-  const scaleY = (load) => height - padding - ((load - minLoad) / (maxLoad - minLoad)) * (height - 2 * padding);
+  const scaleX = (pos) => padding + ((Number(pos) || 0) / maxPos) * (width - 2 * padding);
+  const scaleY = (load) => height - padding - (((Number(load) || minLoad) - minLoad) / rangeY) * (height - 2 * padding);
 
   // SVG paths
   const surfacePath = points.reduce((acc, pt, idx) => {
@@ -47,14 +54,14 @@ export default function DynoCardCanvas({ cardData }) {
     return idx === 0 ? `M ${x},${y}` : `${acc} L ${x},${y}`;
   }, "") + " Z";
 
-  const isNormal = card_type === "Normal";
+  const isNormal = safeCardType === "Normal";
 
   return (
     <div className="glass-panel" style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
         <div>
           <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span>📊</span> Dynamometer Card (Polished Rod Load vs Position)
+            <Activity size={16} color="#a855f7" /> Dynamometer Card (Polished Rod Load vs Position)
           </h4>
           <p style={{ fontSize: '12px', color: '#94a3b8' }}>
             Surface card (elastic rod string) vs Downhole pump card (valve action)
