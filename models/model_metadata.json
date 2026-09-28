@@ -1,0 +1,45 @@
+{
+  "dataset_path": "C:\\Users\\SNEH\\Desktop\\SIH2\\data\\mock_sensor_data.csv",
+  "anomaly_feature_columns": [
+    "casing_pressure",
+    "tubing_pressure",
+    "polished_rod_load",
+    "stroke_speed",
+    "motor_temp",
+    "casing_pressure_lag1",
+    "tubing_pressure_lag1",
+    "polished_rod_load_lag1",
+    "stroke_speed_lag1",
+    "motor_temp_lag1",
+    "casing_pressure_rolling_mean_3",
+    "tubing_pressure_rolling_mean_3",
+    "polished_rod_load_rolling_mean_3",
+    "stroke_speed_rolling_mean_3",
+    "motor_temp_rolling_mean_3"
+  ],
+  "regression_feature_columns": [
+    "casing_pressure",
+    "tubing_pressure",
+    "polished_rod_load",
+    "motor_temp",
+    "casing_pressure_lag1",
+    "tubing_pressure_lag1",
+    "polished_rod_load_lag1",
+    "motor_temp_lag1",
+    "casing_pressure_rolling_mean_3",
+    "tubing_pressure_rolling_mean_3",
+    "polished_rod_load_rolling_mean_3",
+    "motor_temp_rolling_mean_3"
+  ],
+  "anomaly_metrics": {
+    "anomaly_fraction": 0.035,
+    "n_samples": 120953
+  },
+  "regressor_metrics": {
+    "r2_score": 0.3628,
+    "mae_spm": 1.1157,
+    "n_samples": 120953
+  },
+  "problem_statement": "SIH26120 - Oil India Digital Twin (CSS & SRP)",
+  "version": "2.0.0"
+}
