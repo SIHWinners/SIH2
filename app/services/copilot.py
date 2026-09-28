@@ -150,12 +150,12 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
         answer = (
             f"**Cyclic Steam Stimulation (CSS / 'Huff-and-Puff') in Heavy Oil Fields:**\n\n"
             f"CSS is the primary thermal enhanced oil recovery (EOR) method utilized by Oil India in heavy crude assets like **Baghewala (Rajasthan)**:\n\n"
-            f"1. **Phase 1: Steam Huff (Injection)**: High-pressure, high-temperature steam ($260-310^\circ\\text{C}$, 75-80% quality) is injected downhole for 10-14 days.\n"
+            f"1. **Phase 1: Steam Huff (Injection)**: High-pressure, high-temperature steam ($260-310^\\circ\\text{{C}}$, 75-80% quality) is injected downhole for 10-14 days.\n"
             f"2. **Phase 2: Thermal Soaking**: Well is shut-in for 5-8 days. Conductive heat transfer diffuses heat through reservoir sand to dramatically reduce heavy oil viscosity.\n"
             f"3. **Phase 3: Production Puff**: The well is connected to a Sucker Rod Pump (SRP). Hot, mobilized heavy crude flows at high rates before gradually cooling.\n\n"
             f"**Viscosity Physics (ASTM D341):**\n"
-            f"At reservoir temperature ($25^\circ\\text{C}$), Baghewala crude has a tar-like viscosity of $\\sim 15,000\\text{ cP}$. When heated to $120^\circ\\text{C}$ during CSS production, "
-            f"viscosity collapses to $< 45\\text{ cP}$, unlocking economic recovery without solvent additives."
+            f"At reservoir temperature ($25^\\circ\\text{{C}}$), Baghewala crude has a tar-like viscosity of $\\sim 15,000\\text{{ cP}}$. When heated to $120^\\circ\\text{{C}}$ during CSS production, "
+            f"viscosity collapses to $< 45\\text{{ cP}}$, unlocking economic recovery without solvent additives."
         )
         return {
             "query": query,
@@ -164,7 +164,81 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
             "suggested_actions": ["View CSS-101 Thermal Twin", "Check Viscosity Curves", "Review SOR Ratios"],
         }
 
-    # 5. DEFAULT HELPFUL FALLBACK
+    # 5. CAPABILITIES / WHAT CAN YOU DO
+    if any(k in q for k in ["what can you do", "what can u do", "capabilities", "features", "help me", "how to use", "who are you"]):
+        answer = (
+            f"### 🤖 Oil India Digital Twin Operations Copilot Capabilities\n\n"
+            f"I am a specialized petroleum operations intelligence agent grounded in live SCADA telemetry, "
+            f"thermodynamic reservoir physics, and machine learning models for the Baghewala Asset:\n\n"
+            f"1. **Real-Time Well Diagnostics**: Ask about any specific well (e.g. *'Diagnose SRP-004'* or *'Check CSS-001'*). I pull current polished rod loads, downhole temperatures, casing/tubing pressures, and vibration RMS.\n"
+            f"2. **Dynamometer Card Interpretation**: Ask *'Explain dyno card'* to understand normal vs fluid pound, gas lock, or parted rod curves.\n"
+            f"3. **Thermal EOR & Viscosity (CSS)**: Ask *'What is CSS thermal recovery?'* to inspect downhole steam fronts and ASTM D341 heavy oil viscosity collapse.\n"
+            f"4. **AI Stroke Optimization**: Ask *'How does AI calculate optimal SPM?'* to see how our Random Forest Regressor maximizes barrels per day while minimizing mechanical stress.\n"
+            f"5. **Field Overview & Alarms**: Ask *'Field summary'* or *'Show active alarms'* to get an executive SCADA health briefing.\n"
+            f"6. **Environmental Impact**: Ask *'Current weather'* to view ambient Thar Desert temperatures and surface pipeline cooling effects."
+        )
+        return {
+            "query": query,
+            "answer": answer,
+            "category": "capabilities",
+            "suggested_actions": ["Field Summary", "Diagnose SRP-004", "How does AI calculate SPM?", "Current Weather"],
+        }
+
+    # 6. AI & MACHINE LEARNING EXPLANATION
+    if any(k in q for k in ["ai", "ml", "machine learning", "model", "algorithm", "random forest", "isolation forest", "shap", "spm", "optimize"]):
+        answer = (
+            f"### 🧠 Machine Learning Architecture in our Digital Twin\n\n"
+            f"Our platform integrates four production-grade mathematical and ML pipelines:\n\n"
+            f"1. **Anomaly Detection (`IsolationForest`)**: Unsupervised anomaly detection on 6-dimensional SCADA telemetry (casing/tubing pressures, motor temp, polished rod load, vibration, stroke speed). Identifies multi-sensor drift and anomalous operating envelopes before catastrophic failures.\n"
+            f"2. **Stroke Speed Optimization (`RandomForestRegressor`)**: Dynamically computes the target Strokes Per Minute (SPM) to maximize net oil production while preventing pump underfillage and rod fatigue.\n"
+            f"3. **Explainable AI (`SHAP TreeExplainer`)**: Generates waterfall feature attributions showing exactly which telemetry parameters (e.g. motor temperature +18% or casing pressure -32%) pushed the model towards an anomaly or speed adjustment.\n"
+            f"4. **Gibbs Wave Equation (Dynamometer Physics)**: Converts surface polished rod dynamometer cards into downhole pump plunger cards to diagnose downhole valve operations."
+        )
+        return {
+            "query": query,
+            "answer": answer,
+            "category": "ai_explanation",
+            "suggested_actions": ["Diagnose SRP-001", "Field Summary", "Explain Dyno Card"],
+        }
+
+    # 7. WEATHER & ENVIRONMENTAL CONDITIONS
+    if any(k in q for k in ["weather", "temperature", "desert", "ambient", "thar", "climate"]):
+        from app.services.weather import get_thar_desert_weather
+        w = get_thar_desert_weather()
+        answer = (
+            f"### ☀️ Thar Desert Environmental SCADA Feed (Baghewala)\n\n"
+            f"- **Field Location:** Baghewala Heavy Oil Asset, Jaisalmer Basin, Rajasthan (27.50°N, 71.50°E)\n"
+            f"- **Ambient Temperature:** `{w.get('temperature_c', 38.0)} °C` ({w.get('weather_condition', 'Sunny / Desert Heat')})\n"
+            f"- **Relative Humidity:** `{w.get('humidity_percent', 18)} %` • **Wind Speed:** `{w.get('wind_speed_kmh', 14)} km/h`\n"
+            f"- **Solar Radiation:** `{w.get('solar_radiation_w_m2', 820)} W/m²`\n\n"
+            f"**Operational Impact on Heavy Crude:**\n"
+            f"Ambient desert heat reduces surface gathering line heat loss. However, high ambient temperatures accelerate pump motor overheating. "
+            f"Our system correlates motor temperature with ambient weather to prevent false positive thermal alarms."
+        )
+        return {
+            "query": query,
+            "answer": answer,
+            "category": "weather_feed",
+            "suggested_actions": ["Field Summary", "Check Motor Temps", "CSS Thermal Recovery"],
+        }
+
+    # 8. BAGHEWALA FIELD GEOLOGY
+    if any(k in q for k in ["baghewala", "reservoir", "geology", "oil india", "asset", "heavy oil"]):
+        answer = (
+            f"### 🛢️ Oil India Limited — Baghewala Heavy Oil Asset\n\n"
+            f"- **Basin:** Bikaner-Nagaur Basin, Thar Desert, Rajasthan, India.\n"
+            f"- **Formation:** Jodhpur Sandstone / Bilara Limestone (~1,100 to 1,300 meters depth).\n"
+            f"- **Crude Characteristics:** Extra-heavy crude oil, 16°–19° API gravity, with extremely high downhole viscosity (~15,000 cP at initial reservoir temp 25°C).\n"
+            f"- **Recovery Strategy:** Cyclic Steam Stimulation (CSS) thermal recovery to collapse viscosity down to < 50 cP, coupled with heavy-duty Sucker Rod Pumping (SRP) units."
+        )
+        return {
+            "query": query,
+            "answer": answer,
+            "category": "geology_knowledge",
+            "suggested_actions": ["Field Summary", "What is CSS?", "Diagnose SRP-001"],
+        }
+
+    # 9. DEFAULT HELPFUL FALLBACK
     return {
         "query": query,
         "answer": (
@@ -174,8 +248,9 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
             f"- *'How is the field operating today?'*\n"
             f"- *'Why is well SRP-004 in critical state?'*\n"
             f"- *'Explain the dynamometer card for SRP-002.'*\n"
-            f"- *'What is the current thermal phase of CSS-102?'*\n"
-            f"- *'How does AI calculate optimal pump stroke speed?'*"
+            f"- *'What is the current thermal phase of CSS-001?'*\n"
+            f"- *'How does AI calculate optimal pump stroke speed?'*\n"
+            f"- *'What is the current weather in Thar Desert?'*"
         ),
         "category": "general_guidance",
         "suggested_actions": ["Field Summary", "Diagnose SRP-004", "Explain Dyno Card", "CSS Thermal Recovery"],
