@@ -1,0 +1,9 @@
+{
+  "name": "oil-india-digital-twin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix web",
+    "dev": "npm run dev --prefix web"
+  }
+}
