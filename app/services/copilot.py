@@ -92,9 +92,10 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
                 )
         else:
             is_anomaly = latest.predicted_anomaly
+            status_tag = '[STATUS: CRITICAL ANOMALY]' if (is_anomaly and latest.anomaly_score > 0.8) else ('[STATUS: WARNING THRESHOLD]' if is_anomaly else '[STATUS: NOMINAL OPERATING]')
             answer = (
-                f"### Diagnostic Report: {target_well} (Sucker Rod Pumping Unit)\n\n"
-                f"- **Operating Health Status:** `{'🔴 CRITICAL' if is_anomaly and latest.anomaly_score > 0.8 else ('🟡 WARNING' if is_anomaly else '🟢 NOMINAL')}`\n"
+                f"### Engineering Diagnostic Report: {target_well} (Sucker Rod Pumping Unit)\n\n"
+                f"- **Operating Health Status:** `{status_tag}`\n"
                 f"- **Current Speed:** `{latest.stroke_speed:.1f} SPM` (AI Recommended Optimal: `{latest.optimal_speed:.1f} SPM`)\n"
                 f"- **Polished Rod Load:** `{latest.polished_rod_load:.1f} kN` (Depth: `{meta.depth_m if meta else 1200} m`)\n"
                 f"- **Wellbore Pressures:** Casing `{latest.casing_pressure:.0f} psi` • Tubing `{latest.tubing_pressure:.0f} psi`\n"
@@ -167,15 +168,14 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
     # 5. CAPABILITIES / WHAT CAN YOU DO
     if any(k in q for k in ["what can you do", "what can u do", "capabilities", "features", "help me", "how to use", "who are you"]):
         answer = (
-            f"### 🤖 Oil India Digital Twin Operations Copilot Capabilities\n\n"
-            f"I am a specialized petroleum operations intelligence agent grounded in live SCADA telemetry, "
-            f"thermodynamic reservoir physics, and machine learning models for the Baghewala Asset:\n\n"
-            f"1. **Real-Time Well Diagnostics**: Ask about any specific well (e.g. *'Diagnose SRP-004'* or *'Check CSS-001'*). I pull current polished rod loads, downhole temperatures, casing/tubing pressures, and vibration RMS.\n"
-            f"2. **Dynamometer Card Interpretation**: Ask *'Explain dyno card'* to understand normal vs fluid pound, gas lock, or parted rod curves.\n"
-            f"3. **Thermal EOR & Viscosity (CSS)**: Ask *'What is CSS thermal recovery?'* to inspect downhole steam fronts and ASTM D341 heavy oil viscosity collapse.\n"
-            f"4. **AI Stroke Optimization**: Ask *'How does AI calculate optimal SPM?'* to see how our Random Forest Regressor maximizes barrels per day while minimizing mechanical stress.\n"
-            f"5. **Field Overview & Alarms**: Ask *'Field summary'* or *'Show active alarms'* to get an executive SCADA health briefing.\n"
-            f"6. **Environmental Impact**: Ask *'Current weather'* to view ambient Thar Desert temperatures and surface pipeline cooling effects."
+            f"### OIL INDIA OPERATIONS COPILOT: CAPABILITY MATRIX\n\n"
+            f"Grounding Architecture: Live SCADA Telemetry, Thermodynamic Multi-Phase Physics, and Scikit-Learn Predictive Models for Baghewala Field Assets:\n\n"
+            f"1. **Real-Time Well Diagnostics**: Query any wellhead (e.g., 'Diagnose SRP-004' or 'Check CSS-001') to retrieve telemetry vectors, motor thermal curves, polished rod loadings, and casing/tubing gradients.\n"
+            f"2. **Dynamometer Card Interpretation**: Query 'Explain dyno card' for diagnostic decomposition of surface polished rod and downhole pump stroke cycles.\n"
+            f"3. **Thermal EOR & Viscosity Kinetics**: Query 'What is CSS thermal recovery' to review steam breakthrough margins and ASTM D341 heavy oil viscosity collapse.\n"
+            f"4. **VFD Stroke Rate Optimization**: Query 'How does AI calculate optimal SPM' to inspect Random Forest Regressor target speeds for maximum lift efficiency.\n"
+            f"5. **Field-Wide Operational Briefing**: Query 'Field summary' or 'Show active alarms' for supervisory control indices.\n"
+            f"6. **Environmental Impact Tracking**: Query 'Current weather' for ambient Thar Desert solar irradiation, ambient temperatures, and surface gathering line heat loss."
         )
         return {
             "query": query,
@@ -187,12 +187,12 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
     # 6. AI & MACHINE LEARNING EXPLANATION
     if any(k in q for k in ["ai", "ml", "machine learning", "model", "algorithm", "random forest", "isolation forest", "shap", "spm", "optimize"]):
         answer = (
-            f"### 🧠 Machine Learning Architecture in our Digital Twin\n\n"
-            f"Our platform integrates four production-grade mathematical and ML pipelines:\n\n"
-            f"1. **Anomaly Detection (`IsolationForest`)**: Unsupervised anomaly detection on 6-dimensional SCADA telemetry (casing/tubing pressures, motor temp, polished rod load, vibration, stroke speed). Identifies multi-sensor drift and anomalous operating envelopes before catastrophic failures.\n"
-            f"2. **Stroke Speed Optimization (`RandomForestRegressor`)**: Dynamically computes the target Strokes Per Minute (SPM) to maximize net oil production while preventing pump underfillage and rod fatigue.\n"
-            f"3. **Explainable AI (`SHAP TreeExplainer`)**: Generates waterfall feature attributions showing exactly which telemetry parameters (e.g. motor temperature +18% or casing pressure -32%) pushed the model towards an anomaly or speed adjustment.\n"
-            f"4. **Gibbs Wave Equation (Dynamometer Physics)**: Converts surface polished rod dynamometer cards into downhole pump plunger cards to diagnose downhole valve operations."
+            f"### MACHINE LEARNING & PHYSICS-INFORMED ARCHITECTURE\n\n"
+            f"Our platform integrates four production mathematical and ML pipelines:\n\n"
+            f"1. **Anomaly Detection (IsolationForest)**: Unsupervised high-dimensional isolation forest evaluating multi-sensor vectors (pressures, thermal trends, loads, vibration RMS, stroke frequencies) to compute anomaly contamination scores.\n"
+            f"2. **Production Optimization (RandomForestRegressor)**: Non-linear regression pipeline calibrating VFD speed targets to maximize reservoir inflow while attenuating rod fatigue limits.\n"
+            f"3. **Explainable AI (SHAP TreeExplainer)**: Computes exact Shapley contribution values for each telemetry feature, transparently attributing risk factors for operator verification.\n"
+            f"4. **Gibbs Wave Equation Simulation**: Solves the damped 1D wave equation u_tt = a^2 u_xx - v u_t to convert surface polished rod dynamometer cards into downhole pump stroke loops."
         )
         return {
             "query": query,
@@ -206,14 +206,14 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
         from app.services.weather import get_thar_desert_weather
         w = get_thar_desert_weather()
         answer = (
-            f"### ☀️ Thar Desert Environmental SCADA Feed (Baghewala)\n\n"
-            f"- **Field Location:** Baghewala Heavy Oil Asset, Jaisalmer Basin, Rajasthan (27.50°N, 71.50°E)\n"
-            f"- **Ambient Temperature:** `{w.get('temperature_c', 38.0)} °C` ({w.get('weather_condition', 'Sunny / Desert Heat')})\n"
+            f"### THAR DESERT METEOROLOGICAL TELEMETRY (BAGHEWALA FIELD)\n\n"
+            f"- **Field Coordinates:** 27.50°N, 71.50°E (Jaisalmer Basin, Rajasthan)\n"
+            f"- **Ambient Temperature:** `{w.get('temperature_c', 38.0)} °C` ({w.get('weather_condition', 'Arid Desert Conditions')})\n"
             f"- **Relative Humidity:** `{w.get('humidity_percent', 18)} %` • **Wind Speed:** `{w.get('wind_speed_kmh', 14)} km/h`\n"
-            f"- **Solar Radiation:** `{w.get('solar_radiation_w_m2', 820)} W/m²`\n\n"
-            f"**Operational Impact on Heavy Crude:**\n"
-            f"Ambient desert heat reduces surface gathering line heat loss. However, high ambient temperatures accelerate pump motor overheating. "
-            f"Our system correlates motor temperature with ambient weather to prevent false positive thermal alarms."
+            f"- **Solar Irradiance:** `{w.get('solar_radiation_w_m2', 820)} W/m²`\n\n"
+            f"**Thermodynamic Impact on Heavy Crude:**\n"
+            f"High ambient solar heat reduces surface flowline heat loss, mitigating paraffin deposition. However, elevated ambient conditions diminish natural motor convection cooling. "
+            f"The digital twin automatically compensates motor overheat alarm thresholds based on ambient weather vectors."
         )
         return {
             "query": query,
@@ -225,11 +225,11 @@ def generate_copilot_response(query: str, db: Session) -> dict[str, Any]:
     # 8. BAGHEWALA FIELD GEOLOGY
     if any(k in q for k in ["baghewala", "reservoir", "geology", "oil india", "asset", "heavy oil"]):
         answer = (
-            f"### 🛢️ Oil India Limited — Baghewala Heavy Oil Asset\n\n"
-            f"- **Basin:** Bikaner-Nagaur Basin, Thar Desert, Rajasthan, India.\n"
-            f"- **Formation:** Jodhpur Sandstone / Bilara Limestone (~1,100 to 1,300 meters depth).\n"
-            f"- **Crude Characteristics:** Extra-heavy crude oil, 16°–19° API gravity, with extremely high downhole viscosity (~15,000 cP at initial reservoir temp 25°C).\n"
-            f"- **Recovery Strategy:** Cyclic Steam Stimulation (CSS) thermal recovery to collapse viscosity down to < 50 cP, coupled with heavy-duty Sucker Rod Pumping (SRP) units."
+            f"### ASSET SPECIFICATION: OIL INDIA LIMITED (BAGHEWALA FIELD)\n\n"
+            f"- **Basin Designation:** Bikaner-Nagaur Basin, Thar Desert, Rajasthan, India\n"
+            f"- **Pay Zone Formation:** Jodhpur Sandstone & Bilara Carbonate (1,100 m – 1,300 m True Vertical Depth)\n"
+            f"- **Fluid Classification:** Ultra-Heavy Crude (16°–19° API gravity) with high downhole viscosity (~15,000 cP at initial reservoir temperature of 25°C)\n"
+            f"- **Primary Recovery Methodology:** Cyclic Steam Stimulation (CSS) thermal dissipation coupled with Sucker Rod Pumping (SRP) units to achieve commercial production rates."
         )
         return {
             "query": query,

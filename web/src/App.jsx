@@ -13,7 +13,9 @@ import {
   TrendingUp,
   Zap,
   CheckCircle2,
-  FileText
+  FileText,
+  Flame,
+  Cpu
 } from 'lucide-react';
 
 import SrpSchematic from './components/SrpSchematic';
@@ -199,7 +201,25 @@ export default function App() {
         boxShadow: '0 4px 20px rgba(0, 0, 0, 0.5)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ fontSize: '30px' }}>🛢️</div>
+          <div style={{
+            width: '42px',
+            height: '42px',
+            borderRadius: '10px',
+            background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(14, 22, 38, 0.9) 100%)',
+            border: '1.5px solid rgba(245, 158, 11, 0.5)',
+            boxShadow: '0 0 15px rgba(245, 158, 11, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L3 22h18L12 2z" />
+              <path d="M12 8v14" />
+              <path d="M7 16h10" />
+              <circle cx="12" cy="5" r="1.5" fill="#38bdf8" stroke="#38bdf8" />
+            </svg>
+          </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#f8fafc', letterSpacing: '-0.3px', margin: 0 }}>
@@ -319,7 +339,7 @@ export default function App() {
           {[
             { id: 'command_center', label: 'Field Command Center', icon: Activity },
             { id: 'srp_twin', label: 'SRP Digital Twin & Dyno', icon: Gauge },
-            { id: 'css_twin', label: 'CSS Thermal Recovery', icon: TrendingUp },
+            { id: 'css_twin', label: 'CSS Thermal Recovery', icon: Flame },
             { id: 'sandbox', label: 'What-If Simulation Sandbox', icon: Sliders },
             { id: 'scada_feed', label: 'SCADA Telemetry Stream', icon: Layers },
           ].map((tab) => {
@@ -565,21 +585,26 @@ export default function App() {
 
               {/* Quick Scenario Preset Chips */}
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
-                <span style={{ fontSize: '12px', color: '#94a3b8', alignSelf: 'center', marginRight: '6px' }}>Quick Presets:</span>
-                <button onClick={() => applyPreset(205, 140, 225, 10.5, 65)} className="btn btn-secondary" style={{ fontSize: '12px' }}>
-                  🟢 Nominal Steady State
+                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '700', color: '#64748b', alignSelf: 'center', marginRight: '6px' }}>SCADA Presets:</span>
+                <button onClick={() => applyPreset(205, 140, 225, 10.5, 65)} className="btn btn-secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={13} style={{ color: '#10b981' }} />
+                  <span>Nominal Steady State</span>
                 </button>
-                <button onClick={() => applyPreset(90, 85, 165, 12.0, 68)} className="btn btn-secondary" style={{ fontSize: '12px' }}>
-                  🟡 Fluid Pound Attack
+                <button onClick={() => applyPreset(90, 85, 165, 12.0, 68)} className="btn btn-secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <AlertTriangle size={13} style={{ color: '#f59e0b' }} />
+                  <span>Fluid Pound Starvation</span>
                 </button>
-                <button onClick={() => applyPreset(225, 155, 340, 13.5, 92)} className="btn btn-secondary" style={{ fontSize: '12px' }}>
-                  🔴 Motor Overheating
+                <button onClick={() => applyPreset(225, 155, 340, 13.5, 92)} className="btn btn-secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Flame size={13} style={{ color: '#f43f5e' }} />
+                  <span>Motor Thermal Overload</span>
                 </button>
-                <button onClick={() => applyPreset(315, 80, 210, 11.0, 72)} className="btn btn-secondary" style={{ fontSize: '12px' }}>
-                  🟠 Gas Locking Slug
+                <button onClick={() => applyPreset(315, 80, 210, 11.0, 72)} className="btn btn-secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Activity size={13} style={{ color: '#fb923c' }} />
+                  <span>Gas Interference Slug</span>
                 </button>
-                <button onClick={() => applyPreset(240, 160, 390, 8.5, 84)} className="btn btn-secondary" style={{ fontSize: '12px' }}>
-                  🟣 Heavy Wax Buildup
+                <button onClick={() => applyPreset(240, 160, 390, 8.5, 84)} className="btn btn-secondary" style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Sliders size={13} style={{ color: '#a855f7' }} />
+                  <span>Paraffinic Wax Friction</span>
                 </button>
               </div>
 
@@ -681,8 +706,9 @@ export default function App() {
             {/* Instant AI Reaction Cards */}
             {simResult && (
               <div className="glass-panel" style={{ padding: '24px' }}>
-                <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', marginBottom: '16px' }}>
-                  🎯 AI Digital Twin Real-Time Reaction
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#f8fafc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <Cpu size={16} color="#38bdf8" />
+                  <span>Real-Time AI Inference & Optimization Output</span>
                 </h4>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
@@ -747,12 +773,14 @@ export default function App() {
                       setTimeout(() => setVfdToast(false), 4000);
                     }}
                     className="btn btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
                   >
-                    <span>🚀 Dispatch VFD Frequency Setpoint ({simResult.optimal_speed.toFixed(1)} SPM)</span>
+                    <Zap size={15} />
+                    <span>Transmit VFD Frequency Calibration ({simResult.optimal_speed.toFixed(1)} SPM) to SCADA PLC</span>
                   </button>
                   {vfdToast && (
-                    <span style={{ color: '#10b981', fontSize: '13px', fontWeight: '600' }}>
-                      ✓ VFD motor setpoint command dispatched to {selectedWell} SCADA RTU!
+                    <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={14} /> SCADA PLC Acknowledged: Frequency Setpoint Dispatched to {selectedWell} RTU
                     </span>
                   )}
                 </div>

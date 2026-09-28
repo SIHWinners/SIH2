@@ -1,21 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, X, Sparkles, User } from 'lucide-react';
+import { Send, Bot, X, Sparkles, User, BarChart3, AlertTriangle, Activity, Flame, Cpu, Sun, Layers, ChevronRight } from 'lucide-react';
 import { apiUrl } from '../api';
+
+const getActionIcon = (label) => {
+  const l = label.toLowerCase();
+  if (l.includes('summary') || l.includes('overview')) return <BarChart3 size={13} color="#38bdf8" />;
+  if (l.includes('critical') || l.includes('srp-004') || l.includes('diagnose')) return <AlertTriangle size={13} color="#f59e0b" />;
+  if (l.includes('dyno') || l.includes('dynamometer') || l.includes('card')) return <Activity size={13} color="#a855f7" />;
+  if (l.includes('css') || l.includes('thermal') || l.includes('steam')) return <Flame size={13} color="#f43f5e" />;
+  if (l.includes('ai') || l.includes('spm') || l.includes('optimize') || l.includes('speed')) return <Cpu size={13} color="#10b981" />;
+  if (l.includes('weather') || l.includes('temperature') || l.includes('desert')) return <Sun size={13} color="#fbbf24" />;
+  return <Layers size={13} color="#94a3b8" />;
+};
 
 export default function CopilotModal({ isOpen, onClose, selectedWell }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: `Hello! I am the **Oil India Digital Twin Operations Copilot**.\n\nI monitor real-time SCADA telemetry, thermodynamic reservoir physics, and machine learning models across our Baghewala SRP and CSS wells.\n\nSelect any operational topic below to begin:`,
+      text: `Welcome to the **Oil India Digital Twin Operations Intelligence Console**.\n\nGrounded in continuous SCADA telemetry, thermodynamic reservoir modeling, and machine learning inferences across the Baghewala Asset.\n\nSelect an operational inquiry to initiate analysis:`,
       suggestedActions: [
-        '📊 Field Operations Summary',
-        '⚠️ Why is SRP-004 in critical state?',
-        '📈 Explain Dynamometer Card',
-        '🔥 What is CSS Thermal Recovery?',
-        '🤖 How does AI calculate optimal SPM?',
-        '☀️ Live Thar Desert Weather',
+        'Field Operations Summary',
+        'Diagnose Critical Unit SRP-004',
+        'Dynamometer Card Technical Analysis',
+        'CSS Thermal Recovery Kinetics',
+        'How AI Optimizes VFD Stroke Speed',
+        'Thar Desert Surface Meteorological Telemetry',
       ],
-      time: 'Just now',
+      time: 'Ready',
     },
   ]);
   const [input, setInput] = useState('');
@@ -171,37 +182,47 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
               >
                 {msg.text}
                 {msg.suggestedActions && msg.suggestedActions.length > 0 && (
-                  <div style={{ marginTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#94a3b8', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Sparkles size={12} color="#f59e0b" /> Select an analysis option:
+                  <div style={{ marginTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '700', color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      <Activity size={12} color="#f59e0b" /> Recommended Operational Inquiries
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {msg.suggestedActions.map((action, actIdx) => (
                         <button
                           key={actIdx}
                           onClick={() => handleSend(action)}
                           style={{
-                            background: 'rgba(245, 158, 11, 0.1)',
-                            border: '1px solid rgba(245, 158, 11, 0.3)',
-                            color: '#fbbf24',
+                            background: 'rgba(14, 22, 38, 0.85)',
+                            border: '1px solid rgba(56, 189, 248, 0.2)',
+                            color: '#e2e8f0',
                             fontSize: '11px',
-                            fontWeight: '600',
-                            padding: '6px 12px',
-                            borderRadius: '8px',
+                            fontWeight: '500',
+                            padding: '8px 12px',
+                            borderRadius: '6px',
                             cursor: 'pointer',
                             textAlign: 'left',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px',
                             transition: 'all 0.15s ease',
                           }}
                           onMouseEnter={(e) => {
-                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.25)';
-                            e.currentTarget.style.borderColor = '#f59e0b';
+                            e.currentTarget.style.background = 'rgba(56, 189, 248, 0.15)';
+                            e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
+                            e.currentTarget.style.color = '#38bdf8';
                           }}
                           onMouseLeave={(e) => {
-                            e.currentTarget.style.background = 'rgba(245, 158, 11, 0.1)';
-                            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+                            e.currentTarget.style.background = 'rgba(14, 22, 38, 0.85)';
+                            e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.2)';
+                            e.currentTarget.style.color = '#e2e8f0';
                           }}
                         >
-                          {action}
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {getActionIcon(action)}
+                            <span>{action}</span>
+                          </span>
+                          <ChevronRight size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
                         </button>
                       ))}
                     </div>
