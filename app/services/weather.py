@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 import requests
 
@@ -24,6 +24,7 @@ def fetch_field_weather() -> dict[str, Any]:
         f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,surface_pressure,wind_speed_10m,weather_code"
         f"&hourly=temperature_2m,relative_humidity_2m&forecast_days=1"
     )
+    now_utc = datetime.now(timezone.utc)
     try:
         resp = requests.get(url, timeout=5)
         if resp.status_code == 200:
@@ -49,7 +50,7 @@ def fetch_field_weather() -> dict[str, Any]:
                 "source": "Open-Meteo Live SCADA Weather Integration",
                 "location": "Baghewala Heavy Oil Asset (Rajasthan, India)",
                 "coordinates": f"{BAGHEWALA_LAT}°N, {BAGHEWALA_LON}°E",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": now_utc.isoformat(),
                 "ambient_temperature_c": round(temp_c, 1),
                 "relative_humidity_pct": round(humidity, 1),
                 "wind_speed_kmh": round(wind_kmh, 1),
@@ -62,13 +63,13 @@ def fetch_field_weather() -> dict[str, Any]:
         logger.debug("Weather API call fell back to local atmospheric model: %s", e)
 
     # High-fidelity fallback based on Thar Desert local diurnal cycle
-    hour = datetime.utcnow().hour
+    hour = now_utc.hour
     fallback_temp = 32.0 + 8.0 * ((hour - 6) / 12.0 if 6 <= hour <= 18 else -0.5)
     return {
         "source": "Thar Desert Atmospheric Physical Simulation (Simulated RTU)",
         "location": "Baghewala Heavy Oil Asset (Rajasthan, India)",
         "coordinates": f"{BAGHEWALA_LAT}°N, {BAGHEWALA_LON}°E",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": now_utc.isoformat(),
         "ambient_temperature_c": round(fallback_temp, 1),
         "relative_humidity_pct": 24.5,
         "wind_speed_kmh": 12.8,

@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import desc, func
 from sqlalchemy.orm import Session
+
+def current_utc_time() -> datetime:
+    """Return timezone-naive UTC timestamp without Python 3.12 deprecation warnings."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from app.config import settings
 from app.database import get_db, init_db
@@ -87,7 +91,7 @@ def health_check() -> dict[str, object]:
         "asset_field": settings.FIELD_NAME,
         "database": settings.DATABASE_URL.split("@")[-1] if "@" in settings.DATABASE_URL else settings.DATABASE_URL,
         "version": "2.0.0",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": current_utc_time().isoformat(),
     }
 
 
@@ -129,7 +133,7 @@ def list_wells_detailed(db: Session = Depends(get_db)) -> list[WellMetadataSchem
 @app.post("/api/v1/telemetry", response_model=TelemetryResponse)
 def ingest_telemetry(payload: TelemetryCreate, db: Session = Depends(get_db)) -> TelemetryResponse:
     """Ingest live sensor reading, evaluate ML models, detect anomalies, and persist."""
-    timestamp = payload.timestamp or datetime.utcnow()
+    timestamp = payload.timestamp or current_utc_time()
     history = (
         db.query(TelemetryRecord)
         .filter(TelemetryRecord.well_id == payload.well_id)
@@ -338,7 +342,7 @@ def simulate_prediction(payload: PredictRequest, db: Session = Depends(get_db)) 
     result = infer_and_score(payload.model_dump(), payload.well_id, history)
     return PredictResponse(
         well_id=payload.well_id,
-        timestamp=datetime.utcnow(),
+        timestamp=current_utc_time(),
         predicted_anomaly=result["predicted_anomaly"],
         anomaly_score=result["anomaly_score"],
         optimal_speed=result["optimal_speed"],
@@ -441,7 +445,7 @@ def get_dyno_card(well_id: str, db: Session = Depends(get_db)) -> DynoCardRespon
 
     return DynoCardResponse(
         well_id=well_id,
-        timestamp=latest.timestamp if latest else datetime.utcnow(),
+        timestamp=latest.timestamp if latest else current_utc_time(),
         card_type=card_data["card_type"],
         pprl_lbs=card_data["pprl_lbs"],
         mprl_lbs=card_data["mprl_lbs"],
@@ -521,7 +525,7 @@ def simulator_step(db: Session = Depends(get_db)) -> dict[str, Any]:
     """Generate one live telemetry tick across all wells and score models."""
     from scripts.simulate_telemetry import generate_telemetry_tick
     updated = generate_telemetry_tick(db)
-    return {"status": "ok", "wells_updated": updated, "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "ok", "wells_updated": updated, "timestamp": current_utc_time().isoformat()}
 
 
 @app.get("/api/v1/weather")
@@ -563,8 +567,8 @@ def generate_well_report(well_id: str, db: Session = Depends(get_db)) -> dict[st
         raise HTTPException(status_code=404, detail=f"Well {well_id} not found or has no telemetry")
 
     return {
-        "report_id": f"OIL-AUDIT-{well_id}-{datetime.utcnow().strftime('%Y%m%d%H%M')}",
-        "generated_at": datetime.utcnow().isoformat(),
+        "report_id": f"OIL-AUDIT-{well_id}-{current_utc_time().strftime('%Y%m%d%H%M')}",
+        "generated_at": current_utc_time().isoformat(),
         "asset": settings.FIELD_NAME,
         "well_id": well_id,
         "well_name": meta.well_name,
