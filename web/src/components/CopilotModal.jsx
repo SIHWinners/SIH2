@@ -13,11 +13,172 @@ const getActionIcon = (label) => {
   return <Layers size={13} color="#94a3b8" />;
 };
 
+/**
+ * Lightweight inline markdown-to-JSX renderer.
+ * Handles: ### headings, **bold**, *italic*, `code`, - list items, numbered lists, and \n newlines.
+ * No external library required.
+ */
+function renderMarkdown(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const lines = text.split('\n');
+  const elements = [];
+  let listBuffer = [];
+
+  const flushList = () => {
+    if (listBuffer.length > 0) {
+      elements.push(
+        <ul key={`list-${elements.length}`} style={{ margin: '6px 0', paddingLeft: '18px', listStyle: 'none' }}>
+          {listBuffer.map((item, i) => (
+            <li key={i} style={{ padding: '3px 0', fontSize: '13px', lineHeight: '1.55', position: 'relative', paddingLeft: '14px' }}>
+              <span style={{ position: 'absolute', left: 0, color: '#f59e0b', fontWeight: '700' }}>•</span>
+              {renderInline(item)}
+            </li>
+          ))}
+        </ul>
+      );
+      listBuffer = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // Empty line → flush any pending list and add spacer
+    if (trimmed === '') {
+      flushList();
+      elements.push(<div key={`sp-${i}`} style={{ height: '8px' }} />);
+      continue;
+    }
+
+    // ### Heading
+    if (trimmed.startsWith('### ')) {
+      flushList();
+      elements.push(
+        <div key={`h-${i}`} style={{
+          fontSize: '14px',
+          fontWeight: '700',
+          color: '#f8fafc',
+          marginBottom: '6px',
+          marginTop: elements.length > 0 ? '4px' : '0',
+          letterSpacing: '0.2px',
+          borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
+          paddingBottom: '6px',
+        }}>
+          {renderInline(trimmed.slice(4))}
+        </div>
+      );
+      continue;
+    }
+
+    // - List item or numbered list (e.g. "1. something")
+    if (/^[-•]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
+      const content = trimmed.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '');
+      listBuffer.push(content);
+      continue;
+    }
+
+    // Regular paragraph line
+    flushList();
+    elements.push(
+      <div key={`p-${i}`} style={{ fontSize: '13px', lineHeight: '1.55', color: '#e2e8f0' }}>
+        {renderInline(trimmed)}
+      </div>
+    );
+  }
+
+  flushList();
+  return <>{elements}</>;
+}
+
+/**
+ * Parse inline markdown: **bold**, *italic*, `code`
+ */
+function renderInline(text) {
+  if (!text) return null;
+
+  // Split by patterns: **bold**, *italic*, `code`
+  const parts = [];
+  let remaining = text;
+  let keyIdx = 0;
+
+  while (remaining.length > 0) {
+    // Try **bold** first
+    const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+    // Try `code`
+    const codeMatch = remaining.match(/`([^`]+)`/);
+    // Try *italic*
+    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
+
+    // Find the earliest match
+    let earliest = null;
+    let type = null;
+
+    if (boldMatch && (!earliest || boldMatch.index < earliest.index)) {
+      earliest = boldMatch;
+      type = 'bold';
+    }
+    if (codeMatch && (!earliest || codeMatch.index < earliest.index)) {
+      earliest = codeMatch;
+      type = 'code';
+    }
+    if (italicMatch && (!earliest || italicMatch.index < earliest.index)) {
+      earliest = italicMatch;
+      type = 'italic';
+    }
+
+    if (!earliest) {
+      parts.push(<span key={keyIdx++}>{remaining}</span>);
+      break;
+    }
+
+    // Text before match
+    if (earliest.index > 0) {
+      parts.push(<span key={keyIdx++}>{remaining.slice(0, earliest.index)}</span>);
+    }
+
+    // The matched content
+    if (type === 'bold') {
+      parts.push(
+        <strong key={keyIdx++} style={{ fontWeight: '700', color: '#f8fafc' }}>
+          {earliest[1]}
+        </strong>
+      );
+    } else if (type === 'code') {
+      parts.push(
+        <code key={keyIdx++} style={{
+          background: 'rgba(56, 189, 248, 0.12)',
+          color: '#38bdf8',
+          padding: '1px 5px',
+          borderRadius: '4px',
+          fontSize: '12px',
+          fontFamily: 'JetBrains Mono, monospace',
+          fontWeight: '500',
+          border: '1px solid rgba(56, 189, 248, 0.2)',
+        }}>
+          {earliest[1]}
+        </code>
+      );
+    } else if (type === 'italic') {
+      parts.push(
+        <em key={keyIdx++} style={{ fontStyle: 'italic', color: '#cbd5e1' }}>
+          {earliest[1]}
+        </em>
+      );
+    }
+
+    remaining = remaining.slice(earliest.index + earliest[0].length);
+  }
+
+  return <>{parts}</>;
+}
+
 export default function CopilotModal({ isOpen, onClose, selectedWell }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      text: `Welcome to the **Oil India Digital Twin Operations Intelligence Console** (Engineered by Team **brain.exe_crashed** for SIH26120).\n\nGrounded in continuous SCADA telemetry, thermodynamic reservoir modeling, and machine learning inferences across the Baghewala Asset.\n\nSelect an operational inquiry to initiate analysis:`,
+      text: `Welcome to the Oil India Digital Twin Operations Intelligence Console (Engineered by Team brain.exe_crashed for SIH26120).\n\nGrounded in continuous SCADA telemetry, thermodynamic reservoir modeling, and machine learning inferences across the Baghewala Asset.\n\nSelect an operational inquiry to initiate analysis:`,
       suggestedActions: [
         'Field Operations Summary',
         'Diagnose Critical Unit SRP-004',
@@ -177,10 +338,9 @@ export default function CopilotModal({ isOpen, onClose, selectedWell }) {
                   fontSize: '13px',
                   lineHeight: '1.5',
                   fontWeight: msg.role === 'user' ? '600' : '400',
-                  whiteSpace: 'pre-wrap',
                 }}
               >
-                {msg.text}
+                {msg.role === 'assistant' ? renderMarkdown(msg.text) : msg.text}
                 {msg.suggestedActions && msg.suggestedActions.length > 0 && (
                   <div style={{ marginTop: '14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '10px' }}>
                     <div style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: '700', color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
