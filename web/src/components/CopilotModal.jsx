@@ -14,107 +14,109 @@ const getActionIcon = (label) => {
 };
 
 /**
- * Lightweight inline markdown-to-JSX renderer.
- * Handles: ### headings, **bold**, *italic*, `code`, - list items, numbered lists, and \n newlines.
- * No external library required.
+ * Clean any raw LaTeX math or formula string into clean, human-readable Unicode & math typography.
  */
-function renderMarkdown(text) {
-  if (!text || typeof text !== 'string') return null;
+function cleanLatexMath(expr) {
+  if (!expr || typeof expr !== 'string') return '';
+  let s = expr.trim();
 
-  const lines = text.split('\n');
-  const elements = [];
-  let listBuffer = [];
-
-  const flushList = () => {
-    if (listBuffer.length > 0) {
-      elements.push(
-        <ul key={`list-${elements.length}`} style={{ margin: '6px 0', paddingLeft: '18px', listStyle: 'none' }}>
-          {listBuffer.map((item, i) => (
-            <li key={i} style={{ padding: '3px 0', fontSize: '13px', lineHeight: '1.55', position: 'relative', paddingLeft: '14px' }}>
-              <span style={{ position: 'absolute', left: 0, color: '#f59e0b', fontWeight: '700' }}>•</span>
-              {renderInline(item)}
-            </li>
-          ))}
-        </ul>
-      );
-      listBuffer = [];
-    }
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-    const trimmed = line.trim();
-
-    // Empty line → flush any pending list and add spacer
-    if (trimmed === '') {
-      flushList();
-      elements.push(<div key={`sp-${i}`} style={{ height: '8px' }} />);
-      continue;
-    }
-
-    // ### Heading
-    if (trimmed.startsWith('### ')) {
-      flushList();
-      elements.push(
-        <div key={`h-${i}`} style={{
-          fontSize: '14px',
-          fontWeight: '700',
-          color: '#f8fafc',
-          marginBottom: '6px',
-          marginTop: elements.length > 0 ? '4px' : '0',
-          letterSpacing: '0.2px',
-          borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
-          paddingBottom: '6px',
-        }}>
-          {renderInline(trimmed.slice(4))}
-        </div>
-      );
-      continue;
-    }
-
-    // - List item or numbered list (e.g. "1. something")
-    if (/^[-•]\s/.test(trimmed) || /^\d+\.\s/.test(trimmed)) {
-      const content = trimmed.replace(/^[-•]\s*/, '').replace(/^\d+\.\s*/, '');
-      listBuffer.push(content);
-      continue;
-    }
-
-    // Regular paragraph line
-    flushList();
-    elements.push(
-      <div key={`p-${i}`} style={{ fontSize: '13px', lineHeight: '1.55', color: '#e2e8f0' }}>
-        {renderInline(trimmed)}
-      </div>
-    );
+  // Strip enclosing $$ or $
+  if (s.startsWith('$$') && s.endsWith('$$') && s.length >= 4) {
+    s = s.slice(2, -2).trim();
+  } else if (s.startsWith('$') && s.endsWith('$') && s.length >= 2) {
+    s = s.slice(1, -1).trim();
   }
 
-  flushList();
-  return <>{elements}</>;
+  // Fractions: \frac{num}{den} -> (num) / (den)
+  for (let k = 0; k < 5 && /\\frac\{([^{}]+)\}\{([^{}]+)\}/.test(s); k++) {
+    s = s.replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '($1) / ($2)');
+  }
+
+  // Second derivatives & partials
+  s = s.replace(/\\partial\^2\s*/g, '∂²');
+  s = s.replace(/\\partial\s*/g, '∂');
+
+  // Greek letters
+  s = s.replace(/\\rho\b/g, 'ρ');
+  s = s.replace(/\\mu\b/g, 'μ');
+  s = s.replace(/\\nu\b/g, 'ν');
+  s = s.replace(/\\alpha\b/g, 'α');
+  s = s.replace(/\\beta\b/g, 'β');
+  s = s.replace(/\\Delta\b/g, 'Δ');
+  s = s.replace(/\\theta\b/g, 'θ');
+  s = s.replace(/\\sigma\b/g, 'σ');
+  s = s.replace(/\\pi\b/g, 'π');
+  s = s.replace(/\\omega\b/g, 'ω');
+
+  // Math operators
+  s = s.replace(/\\times\b/g, '×');
+  s = s.replace(/\\cdot\b/g, '·');
+  s = s.replace(/\\approx\b/g, '≈');
+  s = s.replace(/\\le\b|\\leq\b/g, '≤');
+  s = s.replace(/\\ge\b|\\geq\b/g, '≥');
+  s = s.replace(/\\ne\b|\\neq\b/g, '≠');
+  s = s.replace(/\\pm\b/g, '±');
+  s = s.replace(/\\circ\b/g, '°');
+  s = s.replace(/\\infty\b/g, '∞');
+  s = s.replace(/\\sqrt\{([^{}]+)\}/g, '√($1)');
+
+  // \text{...} -> ...
+  s = s.replace(/\\text\{([^{}]+)\}/g, '$1');
+
+  // Logarithms
+  s = s.replace(/\\log_\{10\}|\\log_10/g, 'log₁₀');
+  s = s.replace(/\\log\b/g, 'log');
+
+  // Superscripts
+  s = s.replace(/\^2\b|\^\{2\}/g, '²');
+  s = s.replace(/\^3\b|\^\{3\}/g, '³');
+  s = s.replace(/\^0\b|\^\{0\}/g, '⁰');
+  s = s.replace(/\^1\b|\^\{1\}/g, '¹');
+  s = s.replace(/\^-\b|\^\{-\}/g, '⁻');
+  s = s.replace(/\^t\b|\^\{t\}/g, 'ᵗ');
+
+  // Subscripts: _{...} -> _...
+  s = s.replace(/_\{([^{}]+)\}/g, '_$1');
+
+  // Remove any remaining stray backslashes before words
+  s = s.replace(/\\([a-zA-Z]+)/g, '$1');
+
+  // Remove any stray dollars
+  s = s.replace(/\$/g, '');
+
+  // Clean redundant whitespace
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
 }
 
 /**
- * Parse inline markdown: **bold**, *italic*, `code`
+ * Parse inline markdown: **bold**, *italic*, `code`, $math$
  */
-function renderInline(text) {
+function renderInline(text, depth = 0) {
   if (!text) return null;
+  if (depth > 4) return text;
 
-  // Split by patterns: **bold**, *italic*, `code`
   const parts = [];
   let remaining = text;
   let keyIdx = 0;
 
   while (remaining.length > 0) {
-    // Try **bold** first
+    // Try $math$ first
+    const mathMatch = remaining.match(/\$([^$\n]+?)\$/);
+    // Try **bold**
     const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
     // Try `code`
     const codeMatch = remaining.match(/`([^`]+)`/);
     // Try *italic*
-    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/);
+    const italicMatch = remaining.match(/(?<!\*)\*(?!\*)([^*\n]+?)(?<!\*)\*(?!\*)/);
 
-    // Find the earliest match
     let earliest = null;
     let type = null;
 
+    if (mathMatch && (!earliest || mathMatch.index < earliest.index)) {
+      earliest = mathMatch;
+      type = 'math';
+    }
     if (boldMatch && (!earliest || boldMatch.index < earliest.index)) {
       earliest = boldMatch;
       type = 'bold';
@@ -129,41 +131,67 @@ function renderInline(text) {
     }
 
     if (!earliest) {
-      parts.push(<span key={keyIdx++}>{remaining}</span>);
+      const cleanPlain = remaining.includes('\\') ? cleanLatexMath(remaining) : remaining;
+      parts.push(<span key={keyIdx++}>{cleanPlain}</span>);
       break;
     }
 
-    // Text before match
     if (earliest.index > 0) {
-      parts.push(<span key={keyIdx++}>{remaining.slice(0, earliest.index)}</span>);
+      const beforeText = remaining.slice(0, earliest.index);
+      const cleanBefore = beforeText.includes('\\') ? cleanLatexMath(beforeText) : beforeText;
+      parts.push(<span key={keyIdx++}>{cleanBefore}</span>);
     }
 
-    // The matched content
-    if (type === 'bold') {
+    if (type === 'math') {
+      parts.push(
+        <span
+          key={keyIdx++}
+          style={{
+            display: 'inline-block',
+            background: 'rgba(56, 189, 248, 0.1)',
+            border: '1px solid rgba(56, 189, 248, 0.28)',
+            color: '#38bdf8',
+            padding: '0 6px',
+            borderRadius: '4px',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '12px',
+            fontWeight: '500',
+            margin: '0 2px',
+            verticalAlign: 'baseline',
+          }}
+        >
+          {cleanLatexMath(earliest[1])}
+        </span>
+      );
+    } else if (type === 'bold') {
       parts.push(
         <strong key={keyIdx++} style={{ fontWeight: '700', color: '#f8fafc' }}>
-          {earliest[1]}
+          {renderInline(earliest[1], depth + 1)}
         </strong>
       );
     } else if (type === 'code') {
       parts.push(
-        <code key={keyIdx++} style={{
-          background: 'rgba(56, 189, 248, 0.12)',
-          color: '#38bdf8',
-          padding: '1px 5px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          fontFamily: 'JetBrains Mono, monospace',
-          fontWeight: '500',
-          border: '1px solid rgba(56, 189, 248, 0.2)',
-        }}>
-          {earliest[1]}
+        <code
+          key={keyIdx++}
+          style={{
+            background: 'rgba(56, 189, 248, 0.12)',
+            color: '#38bdf8',
+            padding: '1px 5px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontWeight: '500',
+            border: '1px solid rgba(56, 189, 248, 0.2)',
+            verticalAlign: 'baseline',
+          }}
+        >
+          {cleanLatexMath(earliest[1])}
         </code>
       );
     } else if (type === 'italic') {
       parts.push(
         <em key={keyIdx++} style={{ fontStyle: 'italic', color: '#cbd5e1' }}>
-          {earliest[1]}
+          {renderInline(earliest[1], depth + 1)}
         </em>
       );
     }
@@ -172,6 +200,243 @@ function renderInline(text) {
   }
 
   return <>{parts}</>;
+}
+
+/**
+ * Comprehensive inline markdown & engineering equation renderer.
+ * Handles headings, section headers, block math, lists, sub-bullets, and typography.
+ */
+function renderMarkdown(text) {
+  if (!text || typeof text !== 'string') return null;
+
+  const lines = text.split('\n');
+  const elements = [];
+  let listBuffer = [];
+  let inEquationBlock = false;
+  let equationBuffer = [];
+
+  const flushList = () => {
+    if (listBuffer.length > 0) {
+      elements.push(
+        <ul key={`list-${elements.length}`} style={{ margin: '6px 0', padding: 0, listStyle: 'none' }}>
+          {listBuffer.map((item, i) => (
+            <li
+              key={i}
+              style={{
+                padding: '3px 0',
+                fontSize: '13px',
+                lineHeight: '1.55',
+                position: 'relative',
+                paddingLeft: item.isIndented ? '28px' : '16px',
+                color: '#e2e8f0',
+              }}
+            >
+              {item.type === 'bullet' ? (
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: item.isIndented ? '14px' : '0',
+                    color: item.isIndented ? '#94a3b8' : '#f59e0b',
+                    fontWeight: '700',
+                    fontSize: item.isIndented ? '10px' : '13px',
+                  }}
+                >
+                  {item.isIndented ? '▫' : '•'}
+                </span>
+              ) : (
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: '0',
+                    color: '#f59e0b',
+                    fontWeight: '700',
+                    fontSize: '11px',
+                  }}
+                >
+                  {item.num}
+                </span>
+              )}
+              {renderInline(item.content)}
+            </li>
+          ))}
+        </ul>
+      );
+      listBuffer = [];
+    }
+  };
+
+  const flushEquation = () => {
+    if (equationBuffer.length > 0) {
+      const eqText = equationBuffer.join(' ').trim();
+      elements.push(
+        <div
+          key={`eq-${elements.length}`}
+          style={{
+            margin: '8px 0',
+            padding: '8px 12px',
+            background: 'rgba(15, 23, 42, 0.9)',
+            border: '1px solid rgba(56, 189, 248, 0.28)',
+            borderLeft: '3px solid #38bdf8',
+            borderRadius: '6px',
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: '12.5px',
+            color: '#38bdf8',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '10px',
+            boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.4)',
+            overflowX: 'auto',
+          }}
+        >
+          <span style={{ fontWeight: '500', letterSpacing: '0.3px', whiteSpace: 'nowrap' }}>
+            {cleanLatexMath(eqText)}
+          </span>
+          <span
+            style={{
+              fontSize: '9px',
+              textTransform: 'uppercase',
+              color: '#64748b',
+              letterSpacing: '0.8px',
+              padding: '1px 5px',
+              background: 'rgba(56, 189, 248, 0.08)',
+              borderRadius: '3px',
+              flexShrink: 0,
+              fontWeight: '700',
+            }}
+          >
+            Formula
+          </span>
+        </div>
+      );
+      equationBuffer = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const trimmed = rawLine.trim();
+
+    // Multi-line $$ equation block handling
+    if (inEquationBlock) {
+      if (trimmed.endsWith('$$')) {
+        const content = trimmed.slice(0, -2).trim();
+        if (content) equationBuffer.push(content);
+        flushEquation();
+        inEquationBlock = false;
+      } else {
+        equationBuffer.push(trimmed);
+      }
+      continue;
+    }
+
+    if (trimmed.startsWith('$$')) {
+      flushList();
+      if (trimmed.endsWith('$$') && trimmed.length > 2) {
+        const content = trimmed.slice(2, -2).trim();
+        equationBuffer.push(content);
+        flushEquation();
+      } else {
+        inEquationBlock = true;
+        const after = trimmed.slice(2).trim();
+        if (after) equationBuffer.push(after);
+      }
+      continue;
+    }
+
+    // Empty line -> flush list and add spacer
+    if (trimmed === '') {
+      flushList();
+      elements.push(<div key={`sp-${elements.length}`} style={{ height: '6px' }} />);
+      continue;
+    }
+
+    // Headings: #, ##, ###
+    if (/^#{1,3}\s/.test(trimmed)) {
+      flushList();
+      const headingContent = trimmed.replace(/^#{1,3}\s*/, '');
+      elements.push(
+        <div
+          key={`h-${elements.length}`}
+          style={{
+            fontSize: '14px',
+            fontWeight: '700',
+            color: '#f8fafc',
+            marginBottom: '6px',
+            marginTop: elements.length > 0 ? '6px' : '0',
+            letterSpacing: '0.2px',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.25)',
+            paddingBottom: '5px',
+          }}
+        >
+          {renderInline(headingContent)}
+        </div>
+      );
+      continue;
+    }
+
+    // Major Section Headers: e.g. "**1. Operational Telemetry Comparison:**" or "**2. Physical Safety Envelope Bounding:**"
+    const sectionMatch = trimmed.match(/^\*\*(\d+\.\s*[^*]+?)\*\*:?$/) || trimmed.match(/^(\d+\.\s+[A-Z][^:]+?:)$/);
+    if (sectionMatch) {
+      flushList();
+      elements.push(
+        <div
+          key={`sec-${elements.length}`}
+          style={{
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#f8fafc',
+            marginTop: elements.length > 0 ? '10px' : '2px',
+            marginBottom: '4px',
+            letterSpacing: '0.2px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}
+        >
+          <span style={{ color: '#f59e0b', fontSize: '9px' }}>▶</span>
+          <span>{renderInline(sectionMatch[1])}</span>
+        </div>
+      );
+      continue;
+    }
+
+    // List item detection (bullets or numbered)
+    const isIndented = rawLine.startsWith('  ') || rawLine.startsWith('\t');
+    const bulletMatch = trimmed.match(/^[-•*]\s+(.*)$/);
+    const numberMatch = trimmed.match(/^(\d+)\.\s+(.*)$/);
+
+    if (bulletMatch) {
+      listBuffer.push({
+        type: 'bullet',
+        content: bulletMatch[1],
+        isIndented,
+      });
+      continue;
+    }
+
+    if (numberMatch) {
+      listBuffer.push({
+        type: 'number',
+        num: `${numberMatch[1]}.`,
+        content: numberMatch[2],
+        isIndented,
+      });
+      continue;
+    }
+
+    // Regular paragraph line
+    flushList();
+    elements.push(
+      <div key={`p-${elements.length}`} style={{ fontSize: '13px', lineHeight: '1.55', color: '#e2e8f0', marginBottom: '2px' }}>
+        {renderInline(trimmed)}
+      </div>
+    );
+  }
+
+  flushList();
+  flushEquation();
+  return <>{elements}</>;
 }
 
 export default function CopilotModal({ isOpen, onClose, selectedWell }) {

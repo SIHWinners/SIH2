@@ -173,3 +173,27 @@ def test_copilot_physics_foundations():
         assert "15,000" in resp_astm["answer"]
     finally:
         db.close()
+
+
+def test_copilot_formatting_and_no_raw_latex():
+    """Verify Copilot responses contain no unreadable raw LaTeX syntax or broken markup."""
+    db = SessionLocal()
+    try:
+        queries = [
+            "How does AI optimize pump speed?",
+            "How does the Gibbs wave equation work for dynamometer cards?",
+            "Explain ASTM D341 viscosity equation in heavy oil",
+            "What if we increase stroke speed to 14 SPM on SRP-002?",
+            "Compare SRP-001 and SRP-004",
+            "Field summary",
+        ]
+        forbidden_latex = ["\\frac", "\\partial", "\\rho", "\\mu", "\\nu", "\\text{", "$Q = Q_{max}"]
+
+        for q in queries:
+            res = generate_copilot_response(q, db)
+            answer = res["answer"]
+            for token in forbidden_latex:
+                assert token not in answer, f"Forbidden raw LaTeX token '{token}' found in response to query: '{q}'"
+    finally:
+        db.close()
+
