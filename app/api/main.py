@@ -537,12 +537,25 @@ def get_weather() -> dict[str, Any]:
 @app.post("/api/v1/copilot/chat", response_model=CopilotResponse)
 def copilot_chat(payload: CopilotRequest, db: Session = Depends(get_db)) -> CopilotResponse:
     """Process natural language query with real-time field context and ML insights."""
-    res = generate_copilot_response(payload.message, db)
+    try:
+        res = generate_copilot_response(payload.message, db)
+    except Exception as e:
+        logger.exception("Error generating copilot response for message '%s': %s", payload.message, e)
+        res = {
+            "query": payload.message,
+            "answer": "The operations copilot encountered an unexpected telemetry resolution error. Please try another recommended operational inquiry from below.",
+            "category": "error_recovery",
+            "suggested_actions": [
+                "Field Operations Summary",
+                "Diagnose Critical Unit SRP-004",
+                "How AI Optimizes VFD Stroke Speed",
+            ],
+        }
     return CopilotResponse(
         query=res["query"],
         answer=res["answer"],
-        category=res["category"],
-        suggested_actions=res["suggested_actions"],
+        category=res.get("category", "general"),
+        suggested_actions=res.get("suggested_actions", []),
     )
 
 

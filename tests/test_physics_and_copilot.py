@@ -186,6 +186,7 @@ def test_copilot_formatting_and_no_raw_latex():
             "What if we increase stroke speed to 14 SPM on SRP-002?",
             "Compare SRP-001 and SRP-004",
             "Field summary",
+            "Thar Desert Surface Meteorological Telemetry",
         ]
         forbidden_latex = ["\\frac", "\\partial", "\\rho", "\\mu", "\\nu", "\\text{", "$Q = Q_{max}"]
 

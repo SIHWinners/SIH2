@@ -78,3 +78,33 @@ def fetch_field_weather() -> dict[str, Any]:
         "field_thermal_impact_advisory": "Ambient desert temperature monitored. Surface motor cooling envelope nominal.",
         "live": False,
     }
+
+
+def get_thar_desert_weather() -> dict[str, Any]:
+    """Provide structured Thar Desert weather telemetry for the Copilot reasoning engine."""
+    data = fetch_field_weather()
+    temp_c = data.get("ambient_temperature_c", 38.0)
+    humidity = data.get("relative_humidity_pct", 18.0)
+    wind_kmh = data.get("wind_speed_kmh", 14.0)
+
+    # Estimate solar irradiance based on hour of day in Thar desert
+    now_utc = datetime.now(timezone.utc)
+    hour = (now_utc.hour + 5) % 24  # Indian Standard Time (UTC+5:30) approx
+    if 6 <= hour <= 18:
+        solar_w_m2 = round(max(150.0, 860.0 * (1.0 - abs(hour - 12) / 7.0)), 1)
+        weather_desc = "Intense Desert Sunshine" if solar_w_m2 > 500 else "Clear Arid Day"
+    else:
+        solar_w_m2 = 0.0
+        weather_desc = "Clear Desert Night"
+
+    return {
+        **data,
+        "temperature_c": temp_c,
+        "ambient_temperature_c": temp_c,
+        "humidity_percent": humidity,
+        "relative_humidity_pct": humidity,
+        "wind_speed_kmh": wind_kmh,
+        "solar_radiation_w_m2": solar_w_m2,
+        "weather_condition": weather_desc,
+    }
+
