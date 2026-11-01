@@ -15,13 +15,5 @@ services:
       - key: FIELD_NAME
         value: Oil India Limited - Baghewala Asset
       - key: DATABASE_URL
-        fromDatabase:
-          name: oil-india-postgres
-          property: connectionString
+        sync: false
 
-databases:
-  # Managed PostgreSQL Database for Time-Series Telemetry
-  - name: oil-india-postgres
-    databaseName: digital_twin
-    user: oil_user
-    plan: free
